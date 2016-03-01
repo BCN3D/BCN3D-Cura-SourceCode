@@ -6,6 +6,7 @@ import platform
 import shutil
 import glob
 import warnings
+import socket
 
 try:
 	#Only try to import the _core to save import time
@@ -137,13 +138,14 @@ class CuraApp(wx.App):
 			configWizard.ConfigWizard()
 
 		if profile.getPreference('check_for_updates') == 'True':
-			newVersion = version.checkForNewVersion()
-			if newVersion is not None:
-				if self.splash is not None:
-					self.splash.Show(False)
-				if wx.MessageBox(_("A new version of Cura is available, would you like to download?"), _("New version available"), wx.YES_NO | wx.ICON_INFORMATION) == wx.YES:
-					webbrowser.open(newVersion)
-					return
+			if self.haveInternet() == True:
+				newVersion = version.checkForNewVersion()
+				if newVersion is not None:
+					if self.splash is not None:
+						self.splash.Show(False)
+					if wx.MessageBox(_("A new version of Cura is available, would you like to download?"), _("New version available"), wx.YES_NO | wx.ICON_INFORMATION) == wx.YES:
+						webbrowser.open(newVersion)
+						return
 		if profile.getMachineSetting('machine_name') == '':
 			return
 		self.mainWindow = mainWindow.mainWindow()
@@ -160,6 +162,16 @@ class CuraApp(wx.App):
 
 		if sys.platform.startswith('darwin'):
 			wx.CallAfter(self.StupidMacOSWorkaround)
+
+	def haveInternet(self):
+		REMOTE_SERVER = "www.google.com"
+		try:
+			host = socket.gethostbyname(REMOTE_SERVER)
+			s = socket.create_connection((host, 443))
+			return True
+		except:
+			pass
+		return False
 
 	def StupidMacOSWorkaround(self):
 		"""

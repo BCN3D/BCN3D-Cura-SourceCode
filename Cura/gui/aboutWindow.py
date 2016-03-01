@@ -22,7 +22,7 @@ class aboutWindow(wx.Frame):
 		s.Add(title, flag=wx.ALIGN_CENTRE|wx.EXPAND|wx.BOTTOM, border=5)
 
 		s.Add(wx.StaticText(p, -1, 'End solution for Open Source Fused Filament Fabrication 3D printing.'))
-		s.Add(wx.StaticText(p, -1, 'Cura is currently developed and maintained by Ultimaker.'))
+		s.Add(wx.StaticText(p, -1, 'Cura is currently developed and maintained by BCN3D.'))
 
 		s.Add(wx.StaticText(p, -1, 'Cura is build with the following components:'), flag=wx.TOP, border=10)
 		self.addComponent('Cura', 'Graphical user interface', 'AGPLv3', 'https://github.com/daid/Cura')

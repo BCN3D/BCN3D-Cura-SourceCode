@@ -75,69 +75,64 @@ def getLatestFHVersion(ver):
         url = 'https://github.com/BCN3D/BCN3DSigma-Firmware/releases'
         urlContent = urllib2.urlopen(url)
         data = urlContent.read()
+
+
+        first_v = ver[:2]
+        second_v = ver[:2]
+
+        if first_v == '01':
+            versionMatch = re.search(r'(01-[\d.]+)\.(zip)', data)
+            if not versionMatch:
+                sys.exit('Couldn\'t find the Latest Version!')
+            version = versionMatch.group(1)
+            print 'The latest firmware version available is:',version
+
+            if ver == version:
+                wx.MessageBox(_("Your firmware is already up to date!"), _("Firmware Information"), wx.OK)
+                return None
+
+            elif ver != version:
+                mychoice = wx.MessageBox(_("Your firmware version is: " + ver + "\nThe latest firmware version available is: " + version + "\nWant to download the new version?"), _("New Version"), wx.YES_NO)
+
+                if mychoice == wx.NO:
+                    return None
+                else:
+                    isDownloaded = downloadLatestFHVersion(version, base_url)
+                    if isDownloaded == None:
+                        return None
+                    elif isDownloaded != None:
+                        return not None
+
+        elif second_v == '02':
+            versionMatch = re.search(r'(02-[\d.]+)\.(zip)', data)
+            if not versionMatch:
+                sys.exit('Couldn\'t find the Latest Version!')
+            version = versionMatch.group(1)
+            print 'The latest firmware version available is:',version
+
+            if ver == version:
+                wx.MessageBox(_("Your firmware is already up to date!"), _("Firmware Information"), wx.OK)
+                return None
+
+            elif ver != version:
+                mychoice = wx.MessageBox(_("Your firmware version is: " + ver + "\nThe latest firmware version available is: " + version + "\nWant to download the new version?"), _("New Version"), wx.YES_NO)
+
+                if mychoice == wx.NO:
+                    return None
+                else:
+                    isDownloaded = downloadLatestFHVersion(version, base_url)
+                    if isDownloaded == None:
+                        return None
+                    elif isDownloaded != None:
+                        return not None
+
     elif profile.getMachineSetting('machine_type') == 'BCN3DPlus':
         wx.MessageBox(_("Couldn\'t find the latest version!"), _("Firmware Information"), wx.OK)
         return None
-        #base_url = 'https://github.com/remelbourne/BCN3DSigma-Firmware-Updates/archive/'
-        #url = 'https://github.com/remelbourne/BCN3DSigma-Firmware-Updates/releases/'
-        #urlContent = urllib2.urlopen(url)
-        #data = urlContent.read()
+
     elif profile.getMachineSetting('machine_type') == 'BCN3DR':
         wx.MessageBox(_("Couldn\'t find the latest version!"), _("Firmware Information"), wx.OK)
         return None
-        #base_url = 'https://github.com/remelbourne/BCN3DSigma-Firmware-Updates/archive/'
-        #url = 'https://github.com/remelbourne/BCN3DSigma-Firmware-Updates/releases/'
-        #urlContent = urllib2.urlopen(url)
-        #data = urlContent.read()
-
-    first_v = ver[:2]
-    second_v = ver[:2]
-
-    if first_v == '01':
-        versionMatch = re.search(r'(01-[\d.]+)\.(zip)', data)
-        if not versionMatch:
-            sys.exit('Couldn\'t find the Latest Version!')
-        version = versionMatch.group(1)
-        print 'The latest firmware version available is:',version
-
-        if ver == version:
-            wx.MessageBox(_("Your firmware is already up to date!"), _("Firmware Information"), wx.OK)
-            return None
-
-        elif ver != version:
-            mychoice = wx.MessageBox(_("Your firmware version is: " + ver + "\nThe latest firmware version available is: " + version + "\nWant to download the new version?"), _("New Version"), wx.YES_NO)
-
-            if mychoice == wx.NO:
-                return None
-            else:
-                isDownloaded = downloadLatestFHVersion(version, base_url)
-                if isDownloaded == None:
-                    return None
-                elif isDownloaded != None:
-                    return not None
-
-    elif second_v == '02':
-        versionMatch = re.search(r'(02-[\d.]+)\.(zip)', data)
-        if not versionMatch:
-            sys.exit('Couldn\'t find the Latest Version!')
-        version = versionMatch.group(1)
-        print 'The latest firmware version available is:',version
-
-        if ver == version:
-            wx.MessageBox(_("Your firmware is already up to date!"), _("Firmware Information"), wx.OK)
-            return None
-
-        elif ver != version:
-            mychoice = wx.MessageBox(_("Your firmware version is: " + ver + "\nThe latest firmware version available is: " + version + "\nWant to download the new version?"), _("New Version"), wx.YES_NO)
-
-            if mychoice == wx.NO:
-                return None
-            else:
-                isDownloaded = downloadLatestFHVersion(version, base_url)
-                if isDownloaded == None:
-                    return None
-                elif isDownloaded != None:
-                    return not None
 
 def downloadLatestFHVersion(version,base_url):
 
@@ -230,7 +225,7 @@ def checkForNewVersion():
 
     ver = getVersion()
 
-    print 'La version que tengo ahora es:', ver
+    print 'My current version is ', ver
     
     if sys.platform.startswith('win'):
         url = 'https://github.com/BCN3D/BCN3D-Cura-Windows/releases'

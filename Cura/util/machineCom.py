@@ -714,8 +714,6 @@ class MachineCom(object):
                 if dlg != wx.FD_OPEN:
                     os.chdir(os.path.expanduser('~') + '\Documents')
                     return
-                else:
-                    wx.MessageBox(_("You are running the latest version of firmware!"), _("Awesome!"), wx.ICON_INFORMATION)
 
 
 def getExceptionString():

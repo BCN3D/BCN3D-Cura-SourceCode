@@ -479,11 +479,11 @@ validators.printSpeedValidator(settingsDictionary['infill_speed'])
 validators.printSpeedValidator(settingsDictionary['solidarea_speed'])
 validators.printSpeedValidator(settingsDictionary['inset0_speed'])
 validators.printSpeedValidator(settingsDictionary['insetx_speed'])
-validators.warningAbove(settingsDictionary['print_temperature'], 260.0, _("Temperatures above 260C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature2'], 260.0, _("Temperatures above 260C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature3'], 260.0, _("Temperatures above 260C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature4'], 260.0, _("Temperatures above 260C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature5'], 260.0, _("Temperatures above 260C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature2'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature3'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature4'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature5'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
 validators.warningAbove(settingsDictionary['filament_diameter'], 3.5, _("Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm."))
 validators.warningAbove(settingsDictionary['filament_diameter2'], 3.5, _("Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm."))
 validators.warningAbove(settingsDictionary['filament_diameter3'], 3.5, _("Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm."))
@@ -555,7 +555,7 @@ def getBasePath():
     :return: The path in which the current configuration files are stored. This depends on the used OS.
     """
     if platform.system() == "Windows":
-        basePath = os.path.normpath(os.path.expanduser('~/.cura/0.1.2'))
+        basePath = os.path.normpath(os.path.expanduser('~/.cura/0.1.4'))
     elif platform.system() == "Darwin":
         basePath = os.path.expanduser('~/Library/Application Support/Cura/%s' % version.getVersion())
     else:

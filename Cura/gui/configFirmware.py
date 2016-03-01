@@ -9,6 +9,7 @@ import wx
 import sys
 import time
 import serial
+import subprocess
 
 import wx
 import wx.wizard
@@ -26,6 +27,7 @@ from Cura.util import machineCom
 from Cura.util import machineFirmCom
 from Cura.util import profile
 from Cura.util import resources
+from Tkinter import *
 
 
 class InfoBox(wx.Panel):
@@ -307,6 +309,13 @@ class FirstConnectPrinterSigma(InfoPage):
         getFirstLine = self.AddButton(_("Get firmware version"))
         getFirstLine.Bind(wx.EVT_BUTTON, self.OnGetFirstLine)
         self.AddSeperator()
+        self.AddText(_('Sometimes when releasing new firmware updates, it is \nnecessary to update the files of the LCD Display in order \nto get new functionalities and menus.'))
+        openSDFiles = self.AddButton(_("Open SD Files"))
+        openSDFiles.Bind(wx.EVT_BUTTON, self.OnOpenSDFiles)
+        howToOpen = self.AddButton(_("How to Update SD Files"))
+        howToOpen.Bind(wx.EVT_BUTTON, self.OnHowToOpen)
+        self.AddSeperator()
+
 
 
     def __del__(self):
@@ -314,7 +323,7 @@ class FirstConnectPrinterSigma(InfoPage):
             self.comm.close()
 
     def AllowNext(self):
-        return True
+        return False
 
     def OnCheckClick(self, e=None):
         self.errorLogButton.Show(False)
@@ -444,6 +453,14 @@ class FirstConnectPrinterSigma(InfoPage):
         if self.comm.isOperational():
             self.comm.readFirstLine()
             self.comm.getFirmwareHardware()
+
+    def OnOpenSDFiles(self, e):
+        home = os.path.expanduser('~')
+        os.startfile(home + '\Documents\BCN3DSigma')
+
+    def OnHowToOpen(self, e):
+        webbrowser.open('https://github.com/BCN3D/BCN3D-Cura-Windows/wiki/Updating-the-SD-Files-from-the-LCD-Display')
+
 
 #### Updater for BCN3D Plus #####
 class decideToUpdatePlus(InfoPage):

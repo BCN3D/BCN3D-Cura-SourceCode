@@ -273,9 +273,7 @@ class MachineFirmCom(object):
                 for self._port in machineCom.serialList(False):
                     try:
                         programmer.connect(self._port)
-                        print 'Wiiiiiiii'
                         if programmer.isConnected():
-                            print 'Estamos conectados'
                             return self._serial
                     except ispBase.IspError:
                         programmer.close()

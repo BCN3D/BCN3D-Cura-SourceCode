@@ -839,9 +839,9 @@ class ConfigFirmware(wx.wizard.Wizard):
         if addNew:
             profile.setActiveMachine(profile.getMachineCount())
 
+        self.Bind(wx.wizard.EVT_WIZARD_CANCEL, self.OnCancel)
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
-        self.Bind(wx.wizard.EVT_WIZARD_CANCEL, self.OnCancel)
         self.Bind(wx.wizard.EVT_WIZARD_FINISHED, self.OnFinish)
 
 
@@ -852,7 +852,6 @@ class ConfigFirmware(wx.wizard.Wizard):
         self.firstconnectprinterplus = FirstConnectPrinterPlus(self)
         self.decidetoupdater = decideToUpdateR(self)
         self.firstconnectprinterr = FirstConnectPrinterR(self)
-
 
 
         if profile.getMachineSetting('machine_type') == 'BCN3DSigma':
@@ -870,7 +869,7 @@ class ConfigFirmware(wx.wizard.Wizard):
         self.GetPageAreaSizer().Add(self.machineSelectPage)
 
         self.RunWizard(self.machineSelectPage)
-        self.Hide()
+        self.Destroy()
 
     def OnPageChanging(self, e):
         e.GetPage().StoreData()
@@ -885,12 +884,11 @@ class ConfigFirmware(wx.wizard.Wizard):
         else:
             self.FindWindowById(wx.ID_BACKWARD).Disable()
 
-    def OnCancel(self, e):
-        self.Destroy()
-
-
-    def OnFinish(self, e):
-        self.Destroy()
+    def OnCancel():
+        wizard.Destroy()
+    
+    def OnFinish():
+        wizard.Destroy()
 
 
 

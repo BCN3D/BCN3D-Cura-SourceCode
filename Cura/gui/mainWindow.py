@@ -589,7 +589,6 @@ class mainWindow(wx.Frame):
 
     def OnUpdateHardwareFirmware(self, e):
         configFirmware.ConfigFirmware()
-        return
 
     def OnAddNewMachine(self, e):
         self.Hide()

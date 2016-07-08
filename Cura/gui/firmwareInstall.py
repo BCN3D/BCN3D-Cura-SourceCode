@@ -6,6 +6,7 @@ import threading
 import sys
 import time
 import serial
+import webbrowser
 
 from Cura.avr_isp import stk500v2
 from Cura.avr_isp import ispBase
@@ -24,9 +25,9 @@ def getDefaultFirmware(machineIndex = None):
 
     if sys.platform.startswith('linux'):
         baudrate = 115200
-
     if machine_type == 'BCN3DSigma':
         return resources.getPathForFirmware("MarlinBCN3DSigma.hex")
+
     if machine_type == 'ultimaker':
         name = 'MarlinUltimaker'
         if extruders > 2:
@@ -37,6 +38,7 @@ def getDefaultFirmware(machineIndex = None):
         if extruders > 1:
             name += '-dual'
         return resources.getPathForFirmware(name + '.hex')
+
     if machine_type == 'ultimaker_plus':
         name = 'MarlinUltimaker-UMOP-%d' % (baudrate)
         if extruders > 2:
@@ -44,6 +46,7 @@ def getDefaultFirmware(machineIndex = None):
         if extruders > 1:
             name += '-dual'
         return resources.getPathForFirmware(name + '.hex')
+
     if machine_type == 'ultimaker2':
         if extruders > 2:
             return None
@@ -58,9 +61,15 @@ def getDefaultFirmware(machineIndex = None):
         if extruders > 1:
             return resources.getPathForFirmware("MarlinUltimaker2extended-dual.hex")
         return resources.getPathForFirmware("MarlinUltimaker2extended.hex")
+    if machine_type == 'ultimaker2+':
+        return resources.getPathForFirmware("MarlinUltimaker2Plus.hex")
+    if machine_type == 'ultimaker2+extended':
+        return resources.getPathForFirmware("MarlinUltimaker2PlusExtended.hex")
     if machine_type == 'Witbox':
         return resources.getPathForFirmware("MarlinWitbox.hex")
     return None
+
+
 
 class InstallFirmware(wx.Dialog):
     def __init__(self, parent = None, filename = None, port = None, machineIndex = None):
@@ -90,6 +99,7 @@ class InstallFirmware(wx.Dialog):
         self.okButton.Disable()
         self.okButton.Bind(wx.EVT_BUTTON, self.OnOk)
         sizer.Add(self.okButton, 0, flag=wx.ALIGN_CENTER|wx.ALL, border=5)
+
         self.SetSizer(sizer)
 
         self.filename = filename
@@ -115,7 +125,7 @@ class InstallFirmware(wx.Dialog):
         if self.port == 'AUTO':
             wx.CallAfter(self.updateLabel, _("Please connect the printer to\nyour computer with the USB cable."))
             while not programmer.isConnected():
-                for self.port in machineCom.serialList(False):
+                for self.port in machineCom.serialList(True):
                     try:
                         programmer.connect(self.port)
                         break
@@ -156,7 +166,7 @@ class InstallFirmware(wx.Dialog):
             programmer.programChip(hexFile)
             wx.CallAfter(self.updateLabel, _("Done!\nInstalled firmware: %s") % (os.path.basename(self.filename)))
         except ispBase.IspError as e:
-            wx.CallAfter(self.updateLabel, _("Failed to write firmware.\n") + str(e))
+            wx.CallAfter(self.showError, e)
 
         programmer.close()
         wx.CallAfter(self.okButton.Enable)
@@ -344,7 +354,7 @@ class AutoUpdateFirmware(wx.Dialog):
                 time.sleep(0.5)
                 self.OnInstall()
                 try:
-                    self._serial = serial.Serial(self.port, 115200)
+                    self._serial = serial.Serial(self.port, 250000)
                 except:
                     pass
             time.sleep(0.5)

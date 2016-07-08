@@ -16,6 +16,8 @@ import platform
 import Queue as queue
 import wx
 import shutil
+import wx.wizard
+import webbrowser
 
 import serial
 
@@ -23,33 +25,35 @@ from Cura.avr_isp import stk500v2
 from Cura.avr_isp import ispBase
 from Cura.avr_isp import intelHex
 
+from Cura.gui import printWindow
 from Cura.gui.util import taskbar
+
+
 from Cura.util import profile
 from Cura.util import version
-
+from Cura.util import resources
 
 try:
     import _winreg
 except:
     pass
 
-
 def serialList(forAutoDetect=False):
     """
-		Retrieve a list of serial ports found in the system.
-	:param forAutoDetect: if true then only the USB serial ports are listed. Else all ports are listed.
-	:return: A list of strings where each string is a serial port.
-	"""
-    baselist = []
+        Retrieve a list of serial ports found in the system.
+    :param forAutoDetect: if true then only the USB serial ports are listed. Else all ports are listed.
+    :return: A list of strings where each string is a serial port.
+    """
+    baselist=[]
     if platform.system() == "Windows":
         try:
-            key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM")
-            i = 0
+            key=_winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
+            i=0
             while True:
                 values = _winreg.EnumValue(key, i)
                 if not forAutoDetect or 'USBSER' in values[0]:
-                    baselist += [values[1]]
-                i += 1
+                    baselist+=[values[1]]
+                i+=1
         except:
             pass
     if forAutoDetect:
@@ -60,18 +64,16 @@ def serialList(forAutoDetect=False):
             baselist.remove(prev)
             baselist.insert(0, prev)
     else:
-        baselist = baselist + glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') + glob.glob(
-            "/dev/cu.*") + glob.glob("/dev/tty.usb*") + glob.glob("/dev/rfcomm*") + glob.glob('/dev/serial/by-id/*')
+        baselist = baselist + glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*') + glob.glob("/dev/cu.*") + glob.glob("/dev/tty.usb*") + glob.glob("/dev/rfcomm*") + glob.glob('/dev/serial/by-id/*')
     if version.isDevVersion() and not forAutoDetect:
         baselist.append('VIRTUAL')
     return baselist
 
-
 def baudrateList():
     """
-	:return: a list of integers containing all possible baudrates at which we can communicate.
-			Used for auto-baudrate detection as well as manual baudrate selection.
-	"""
+    :return: a list of integers containing all possible baudrates at which we can communicate.
+            Used for auto-baudrate detection as well as manual baudrate selection.
+    """
     ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
     if profile.getMachineSetting('serial_baud_auto') != '':
         prev = int(profile.getMachineSetting('serial_baud_auto'))
@@ -80,13 +82,11 @@ def baudrateList():
             ret.insert(0, prev)
     return ret
 
-
 class VirtualPrinter():
     """
-	A virtual printer class used for debugging. Acts as a serial.Serial class, but without connecting to any port.
-	Only available when running the development version of Cura.
-	"""
-
+    A virtual printer class used for debugging. Acts as a serial.Serial class, but without connecting to any port.
+    Only available when running the development version of Cura.
+    """
     def __init__(self):
         self.readList = ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n']
         self.temp = 0.0
@@ -98,7 +98,7 @@ class VirtualPrinter():
     def write(self, data):
         if self.readList is None:
             return
-        # print "Send: %s" % (data.rstrip())
+        #print "Send: %s" % (data.rstrip())
         if 'M104' in data or 'M109' in data:
             try:
                 self.targetTemp = float(re.search('S([0-9]+)', data).group(1))
@@ -110,8 +110,7 @@ class VirtualPrinter():
             except:
                 pass
         if 'M105' in data:
-            self.readList.append(
-                "ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
+            self.readList.append("ok T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp, self.targetTemp, self.bedTemp, self.bedTargetTemp))
         elif len(data.strip()) > 0:
             self.readList.append("ok\n")
 
@@ -133,19 +132,17 @@ class VirtualPrinter():
             if self.readList is None:
                 return ''
         time.sleep(0.001)
-        # print "Recv: %s" % (self.readList[0].rstrip())
+        #print "Recv: %s" % (self.readList[0].rstrip())
         return self.readList.pop(0)
 
     def close(self):
         self.readList = None
 
-
 class MachineComPrintCallback(object):
     """
-	Base class for callbacks from the MachineCom class.
-	This class has all empty implementations and is attached to the MachineCom if no other callback object is attached.
-	"""
-
+    Base class for callbacks from the MachineCom class.
+    This class has all empty implementations and is attached to the MachineCom if no other callback object is attached.
+    """
     def mcLog(self, message):
         pass
 
@@ -164,12 +161,11 @@ class MachineComPrintCallback(object):
     def mcZChange(self, newZ):
         pass
 
-
 class MachineCom(object):
     """
-	Class for (USB) serial communication with 3D printers.
-	This class keeps track of if the connection is still live, can auto-detect serial ports and baudrates.
-	"""
+    Class for (USB) serial communication with 3D printers.
+    This class keeps track of if the connection is still live, can auto-detect serial ports and baudrates.
+    """
     STATE_NONE = 0
     STATE_OPEN_SERIAL = 1
     STATE_DETECT_SERIAL = 2
@@ -182,15 +178,18 @@ class MachineCom(object):
     STATE_ERROR = 9
     STATE_CLOSED_WITH_ERROR = 10
 
-
-    def __init__(self, port=None, baudrate=None, callbackObject=None):
+    def __init__(self, port = None, baudrate = None, callbackObject = None):
         if port is None:
             port = profile.getMachineSetting('serial_port')
+            print 'First we detect the ' + port
+        if profile.getMachineSetting('machine_type') == 'BCN3DSigma':
+            baudrate = 250000
         if baudrate is None:
             if profile.getMachineSetting('serial_baud') == 'AUTO':
                 baudrate = 0
             else:
                 baudrate = int(profile.getMachineSetting('serial_baud'))
+                print 'Second we get the desired baudrate = ', baudrate
         if callbackObject is None:
             callbackObject = MachineComPrintCallback()
 
@@ -313,17 +312,25 @@ class MachineCom(object):
         return ret
 
     def _monitor(self):
-        # Open the serial port.
+        #Open the serial port.
         if self._port == 'AUTO':
             self._changeState(self.STATE_DETECT_SERIAL)
             programmer = stk500v2.Stk500v2()
             if not programmer.isConnected():
+                print 'not connected'
                 for self._port in serialList(False):
                     try:
                         self._log("Connecting to: %s (programmer)" % (self._port))
                         programmer.connect(self._port)
                         self._serial = programmer.leaveISP()
+                        print self._baudrate
                         profile.putMachineSetting('serial_port_auto', self._port)
+                        print 'hemos llegado despues del port'
+                        print self._port
+                        print self._serial
+                        self._serial = serial.Serial(str(self._port), self._baudrate, timeout=5, writeTimeout=10000)
+                        print self._serial
+                        profile.putMachineSetting('self_serial', self._serial)
                         break
                     except ispBase.IspError as (e):
                         self._log("Error while connecting to %s: %s" % (self._port, str(e)))
@@ -331,9 +338,9 @@ class MachineCom(object):
                     except:
                         self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
                     programmer.close()
-                if self._serial is None:
-                    self._log("Serial port list: %s" % (str(serialList(True))))
-                    self._serialDetectList = serialList(True)
+            if self._serial is None:
+                self._log("Serial port list: %s" % (str(serialList(True))))
+                self._serialDetectList = serialList(True)
         elif self._port == 'VIRTUAL':
             self._changeState(self.STATE_OPEN_SERIAL)
             self._serial = VirtualPrinter()
@@ -347,15 +354,14 @@ class MachineCom(object):
                     self._log("Connecting to: %s with baudrate: %s (configured)" % (self._port, self._baudrate))
                     self._serial = serial.Serial(str(self._port), self._baudrate, timeout=5, writeTimeout=10000)
             except:
-                self._log(
-                    "Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
+                self._log("Unexpected error while connecting to serial port: %s %s" % (self._port, getExceptionString()))
         if self._serial is None:
             baudrate = self._baudrate
             if baudrate == 0:
                 baudrate = self._baudrateDetectList.pop(0)
             if len(self._serialDetectList) < 1:
                 self._log("Found no ports to try for auto detection")
-                self._errorValue = 'Failed to autodetect serial port.'
+                self._errorValue = "Please make sure your printer is connected."
                 self._changeState(self.STATE_ERROR)
                 return
             port = self._serialDetectList.pop(0)
@@ -366,12 +372,13 @@ class MachineCom(object):
                 pass
         else:
             self._log("Connected to: %s, starting monitor" % (self._serial))
-            if self._baudrate == 0:
+            if self._baudrate != 250000:
                 self._changeState(self.STATE_DETECT_BAUDRATE)
             else:
+                print 'entramos en state connecting'
                 self._changeState(self.STATE_CONNECTING)
 
-        # Start monitoring the serial port.
+        #Start monitoring the serial port.
         if self._state == self.STATE_CONNECTING:
             timeout = time.time() + 15
         else:
@@ -382,16 +389,16 @@ class MachineCom(object):
             if line is None:
                 break
 
-            # No matter the state, if we see an fatal error, goto the error state and store the error for reference.
+            #No matter the state, if we see an fatal error, goto the error state and store the error for reference.
             # Only goto error on known fatal errors.
             if line.startswith('Error:'):
-                # Oh YEAH, consistency.
+                #Oh YEAH, consistency.
                 # Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
                 #	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
                 #	So we can have an extra newline in the most common case. Awesome work people.
                 if re.match('Error:[0-9]\n', line):
                     line = line.rstrip() + self._readline()
-                # Skip the communication errors, as those get corrected.
+                #Skip the communication errors, as those get corrected.
                 if 'Extruder switched off' in line or 'Temperature heated bed switched off' in line or 'Something is wrong, please turn off the printer.' in line:
                     if not self.isError():
                         self._errorValue = line[6:]
@@ -406,15 +413,13 @@ class MachineCom(object):
                         self._bedTemp = float(re.search("B: *([0-9\.]*)", line).group(1))
                     except:
                         pass
-                #self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
-                # If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
+                self._callback.mcTempUpdate(self._temp, self._bedTemp, self._targetTemp, self._bedTargetTemp)
+                #If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
                 if not 'ok' in line and self._heatupWaitStartTime != 0:
                     t = time.time()
                     self._heatupWaitTimeLost = t - self._heatupWaitStartTime
                     self._heatupWaitStartTime = t
-            elif line.strip() != '' and line.strip() != 'ok' and not line.startswith('Resend:') and not line.startswith(
-                    'Error:checksum mismatch') and not line.startswith(
-                    'Error:Line Number is not Last Line Number+1') and line != 'echo:Unknown command:""\n' and self.isOperational():
+            elif line.strip() != '' and line.strip() != 'ok' and not line.startswith('Resend:') and not line.startswith('Error:checksum mismatch') and not line.startswith('Error:Line Number is not Last Line Number+1') and line != 'echo:Unknown command:""\n' and self.isOperational():
                 self._callback.mcMessage(line)
 
             if self._state == self.STATE_DETECT_BAUDRATE or self._state == self.STATE_DETECT_SERIAL:
@@ -433,8 +438,7 @@ class MachineCom(object):
                         if self._state == self.STATE_DETECT_SERIAL:
                             if len(self._serialDetectList) == 0:
                                 if len(self._baudrateDetectList) == 0:
-                                    self._log(
-                                        "Tried all serial ports and baudrates, but still not printer found that responds to M105.")
+                                    self._log("Tried all serial ports and baudrates, but still not printer found that responds to M105.")
                                     self._errorValue = 'Failed to autodetect serial port.'
                                     self._changeState(self.STATE_ERROR)
                                     return
@@ -442,8 +446,7 @@ class MachineCom(object):
                                     self._serialDetectList = serialList(True)
                                     baudrate = self._baudrateDetectList.pop(0)
                             self._serial.close()
-                            self._serial = serial.Serial(self._serialDetectList.pop(0), baudrate, timeout=2.5,
-                                                         writeTimeout=10000)
+                            self._serial = serial.Serial(self._serialDetectList.pop(0), baudrate, timeout=2.5, writeTimeout=10000)
                         else:
                             baudrate = self._baudrateDetectList.pop(0)
                         try:
@@ -457,8 +460,7 @@ class MachineCom(object):
                             self._sendCommand("M105")
                             self._testingBaudrate = True
                         except:
-                            self._log(
-                                "Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
+                            self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, getExceptionString()))
                 elif 'T:' in line:
                     self._baudrateDetectTestOk += 1
                     if self._baudrateDetectTestOk < 10:
@@ -474,14 +476,14 @@ class MachineCom(object):
                 else:
                     self._testingBaudrate = False
             elif self._state == self.STATE_CONNECTING:
-                if line == '' or 'wait' in line:  # 'wait' needed for Repetier (kind of watchdog)
+                if line == '' or 'wait' in line:        # 'wait' needed for Repetier (kind of watchdog)
                     self._sendCommand("M105")
                 elif 'ok' in line:
                     self._changeState(self.STATE_OPERATIONAL)
                 if time.time() > timeout:
                     self.close()
             elif self._state == self.STATE_OPERATIONAL:
-                # Request the temperature on comm timeout (every 2 seconds) when we are not printing.
+                #Request the temperature on comm timeout (every 2 seconds) when we are not printing.
                 if line == '':
                     if self._extruderCount > 0:
                         self._temperatureRequestExtruder = (self._temperatureRequestExtruder + 1) % self._extruderCount
@@ -490,7 +492,7 @@ class MachineCom(object):
                         self.sendCommand("M105")
                     tempRequestTimeout = time.time() + 5
             elif self._state == self.STATE_PRINTING:
-                # Even when printing request the temperature every 5 seconds.
+                #Even when printing request the temperature every 5 seconds.
                 if time.time() > tempRequestTimeout:
                     if self._extruderCount > 0:
                         self._temperatureRequestExtruder = (self._temperatureRequestExtruder + 1) % self._extruderCount
@@ -509,7 +511,7 @@ class MachineCom(object):
                         self._sendNext()
                 elif "resend" in line.lower() or "rs" in line:
                     try:
-                        self._gcodePos = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
+                        self._gcodePos = int(line.replace("N:"," ").replace("N"," ").replace(":"," ").split()[-1])
                     except:
                         if "rs" in line:
                             self._gcodePos = int(line.split()[1])
@@ -526,7 +528,7 @@ class MachineCom(object):
         try:
             self._logQueue.put(message, False)
         except:
-            # If the log queue is full, remove the first message and append the new message again
+            #If the log queue is full, remove the first message and append the new message again
             self._logQueue.get()
             try:
                 self._logQueue.put(message, False)
@@ -544,12 +546,12 @@ class MachineCom(object):
             self.close(True)
             return None
         if ret == '':
-            # self._log("Recv: TIMEOUT")
+            #self._log("Recv: TIMEOUT")
             return ''
         self._log("Recv: %s" % (unicode(ret, 'ascii', 'replace').encode('ascii', 'replace').rstrip()))
         return ret
 
-    def close(self, isError=False):
+    def close(self, isError = False):
         if self._serial != None:
             self._serial.close()
             if isError:
@@ -608,12 +610,10 @@ class MachineCom(object):
             line = line[0]
         try:
             if line == 'M0' or line == 'M1':
-                # self.setPause(True)
-                line = 'M105'  # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
+                #self.setPause(True)
+                line = 'M105'	#Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
             if self._printSection in self._feedRateModifier:
-                line = re.sub('F([0-9]*)',
-                              lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])),
-                              line)
+                line = re.sub('F([0-9]*)', lambda m: 'F' + str(int(int(m.group(1)) * self._feedRateModifier[self._printSection])), line)
             if ('G0' in line or 'G1' in line) and 'Z' in line:
                 z = float(re.search('Z([0-9\.]*)', line).group(1))
                 if self._currentZ != z:
@@ -621,7 +621,7 @@ class MachineCom(object):
                     self._callback.mcZChange(z)
         except:
             self._log("Unexpected error: %s" % (getExceptionString()))
-        checksum = reduce(lambda x, y: x ^ y, map(ord, "N%d%s" % (self._gcodePos, line)))
+        checksum = reduce(lambda x,y:x^y, map(ord, "N%d%s" % (self._gcodePos, line)))
         self._sendCommand("N%d%s*%d" % (self._gcodePos, line, checksum))
         self._gcodePos += 1
         self._callback.mcProgress(self._gcodePos)
@@ -673,54 +673,59 @@ class MachineCom(object):
             stopbits=serial.STOPBITS_ONE,\
             bytesize=serial.EIGHTBITS,\
                 timeout=2)
-
+ 
             print ser
             print("connected to: " + ser.portstr)
-
+ 
             line = []
-
+ 
             self._version = ser.read(8)
             print self._version
-
+ 
             ser.close()
-
-
+ 
+ 
     def getFirmwareHardware(self):
         ver = self._version
-
-        if profile.getMachineSetting('machine_type') != 'BCN3DSigma' and profile.getMachineSetting('machine_type') != 'BCN3DPlus' and profile.getMachineSetting('machine_type') != 'BCN3DR':
-            wx.MessageBox(_("I am sorry, but Cura does not process firmware updates for your machine configuration."), _("Firmware update"), wx.OK | wx.ICON_ERROR)
+ 
+        if profile.getMachineSetting('machine_type') != 'BCN3DSigma' and profile.getMachineSetting(
+                'machine_type') != 'BCN3DPlus' and profile.getMachineSetting('machine_type') != 'BCN3DR':
+            wx.MessageBox(_("I am sorry, but Cura does not process firmware updates for your machine configuration."),
+                          _("Firmware update"), wx.OK | wx.ICON_ERROR)
             return
-        elif profile.getMachineSetting('machine_type') == 'BCN3DSigma' or profile.getMachineSetting('machine_type') == 'BCN3DPlus' or profile.getMachineSetting('machine_type') == 'BCN3DR':
+        elif profile.getMachineSetting('machine_type') == 'BCN3DSigma' or profile.getMachineSetting(
+                'machine_type') == 'BCN3DPlus' or profile.getMachineSetting('machine_type') == 'BCN3DR':
             myVersion = version.getLatestFHVersion(ver)
-
+ 
             if myVersion == None:
                 return
-
+ 
             if version.downloadLatestFHVersion != None:
-                dlg=wx.FileDialog(None, _("Open firmware to upload"), os.getcwd(), style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-                dlg.SetWildcard("HEX file (*.hex)|*.hex;*.HEX")
-                if dlg.ShowModal() == wx.ID_OK:
-                    filename = dlg.GetPath()
-                    dlg.Destroy()
-                    if not(os.path.exists(filename)):
-                        return
-                    #For some reason my Ubuntu 10.10 crashes here.
-                    InstallFirmware(self, filename)
-                    #In case we want to delete the file after it has been installed
-                    #os.chdir(os.path.expanduser('~') + '\Documents\BCN3DSigma')
-                    #path = os.getcwd()
-                    #shutil.rmtree(path)
-                if dlg != wx.FD_OPEN:
-                    os.chdir(os.path.expanduser('~') + '\Documents')
-                    return
-
+                org = os.getcwd()
+                if sys.platform.startswith('win'):
+                    self._dir = os.getcwd() + '\Compiled Firmware'
+                    os.chdir(self._dir)
+                elif sys.platform.startswith('darwin'):
+                    self._dir = os.getcwd() + '/Compiled Firmware/'
+                    os.chdir(self._dir)
+ 
+                for filename in os.listdir(self._dir):
+                    if filename.endswith(".hex"):
+                        InstallFirmware(self, filename)
+ 
+                for filename in os.listdir(org):
+                    if filename.startswith("SD"):
+                        choice = wx.MessageBox(_("You need to update the files on your printers SD Card\n"
+                                                 "Press 'OK' to learn how to do it."), _("Firmware update"), wx.OK)
+                        if choice == wx.OK:
+                            webbrowser.open(
+                                'https://github.com/BCN3D/BCN3D-Cura-Windows/wiki/Updating-the-SD-Files-from-the-LCD-Display')
+ 
+ 
 
 def getExceptionString():
     locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
-    return "%s: '%s' @ %s:%s:%d" % (
-    str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2],
-    locationInfo[1])
+    return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 
 
 class InstallFirmware(wx.Dialog):
@@ -739,9 +744,9 @@ class InstallFirmware(wx.Dialog):
         self._machine_type = profile.getMachineSetting('machine_type', machineIndex)
         if self._machine_type == 'reprap':
             wx.MessageBox(_("Cura only supports firmware updates for ATMega2560 based hardware.\nSo updating your RepRap with Cura might or might not work."), _("Firmware update"), wx.OK | wx.ICON_INFORMATION)
-
+ 
         sizer = wx.BoxSizer(wx.VERTICAL)
-
+ 
         self.progressLabel = wx.StaticText(self, -1, 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\nX\nX')
         sizer.Add(self.progressLabel, 0, flag=wx.ALIGN_CENTER|wx.ALL, border=5)
         self.progressGauge = wx.Gauge(self, -1)
@@ -751,22 +756,22 @@ class InstallFirmware(wx.Dialog):
         self.okButton.Bind(wx.EVT_BUTTON, self.OnOk)
         sizer.Add(self.okButton, 0, flag=wx.ALIGN_CENTER|wx.ALL, border=5)
         self.SetSizer(sizer)
-
+ 
         self.filename = filename
         self.port = port
-
+ 
         self.Layout()
         self.Fit()
-
+ 
         self.thread = threading.Thread(target=self.OnRun)
         self.thread.daemon = True
         self.thread.start()
-
+ 
         self.ShowModal()
         self.Destroy()
         self.OnClose()
         return
-
+ 
     def OnRun(self):
         wx.CallAfter(self.updateLabel, _("Reading firmware..."))
         hexFile = intelHex.readHex(self.filename)
@@ -791,13 +796,13 @@ class InstallFirmware(wx.Dialog):
                 programmer.connect(self.port)
             except ispBase.IspError:
                 programmer.close()
-
+ 
         if not programmer.isConnected():
             wx.MessageBox(_("Failed to find machine for firmware upgrade\nIs your machine connected to the PC?"),
                           _("Firmware update"), wx.OK | wx.ICON_ERROR)
             wx.CallAfter(self.Close)
             return
-
+ 
         if self._default_firmware:
             if self._machine_type == 'BCN3DSigma':
                 if programmer.hasChecksumFunction():
@@ -811,29 +816,29 @@ class InstallFirmware(wx.Dialog):
                     programmer.close()
                     wx.CallAfter(self.okButton.Enable)
                     return
-
+ 
         wx.CallAfter(self.updateLabel, _("Uploading firmware..."))
         try:
             programmer.programChip(hexFile)
             wx.CallAfter(self.updateLabel, _("Done!\nInstalled firmware: %s") % (os.path.basename(self.filename)))
         except ispBase.IspError as e:
             wx.CallAfter(self.updateLabel, _("Failed to write firmware.\n") + str(e))
-
+ 
         programmer.close()
         wx.CallAfter(self.okButton.Enable)
-
+ 
     def updateLabel(self, text):
         self.progressLabel.SetLabel(text)
         #self.Layout()
-
+ 
     def OnProgress(self, value, max):
         wx.CallAfter(self.progressGauge.SetRange, max)
         wx.CallAfter(self.progressGauge.SetValue, value)
         taskbar.setProgress(self.GetParent(), value, max)
-
+ 
     def OnOk(self, e):
         self.Close()
         taskbar.setBusy(self.GetParent(), False)
-
+ 
     def OnClose(self):
         self.Destroy()

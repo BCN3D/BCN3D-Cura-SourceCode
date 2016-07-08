@@ -21,9 +21,9 @@ import types
 import cPickle as pickle
 import numpy
 if sys.version_info[0] < 3:
-    import ConfigParser
+	import ConfigParser
 else:
-    import configparser as ConfigParser
+	import configparser as ConfigParser
 
 from Cura.util import version
 from Cura.util import validators
@@ -39,133 +39,133 @@ settingsList = []
 _selectedMachineIndex = 0
 
 class setting(object):
-    """
-        A setting object contains a configuration setting. These are globally accessible trough the quick access functions
-        and trough the settingsDictionary function.
-        Settings can be:
-        * profile settings (settings that effect the slicing process and the print result)
-        * preferences (settings that effect how cura works and acts)
-        * machine settings (settings that relate to the physical configuration of your machine)
-        * alterations (bad name copied from Skeinforge. These are the start/end code pieces)
-        Settings have validators that check if the value is valid, but do not prevent invalid values!
-        Settings have conditions that enable/disable this setting depending on other settings. (Ex: Dual-extrusion)
-    """
-    def __init__(self, name, default, type, category, subcategory):
-        self._name = name
-        self._label = name
-        self._tooltip = ''
-        self._default = unicode(default)
-        self._values = []
-        self._type = type
-        self._category = category
-        self._subcategory = subcategory
-        self._expert_sub_category = None
-        self._validators = []
-        self._conditions = []
+	"""
+		A setting object contains a configuration setting. These are globally accessible trough the quick access functions
+		and trough the settingsDictionary function.
+		Settings can be:
+		* profile settings (settings that effect the slicing process and the print result)
+		* preferences (settings that effect how cura works and acts)
+		* machine settings (settings that relate to the physical configuration of your machine)
+		* alterations (bad name copied from Skeinforge. These are the start/end code pieces)
+		Settings have validators that check if the value is valid, but do not prevent invalid values!
+		Settings have conditions that enable/disable this setting depending on other settings. (Ex: Dual-extrusion)
+	"""
+	def __init__(self, name, default, type, category, subcategory):
+		self._name = name
+		self._label = name
+		self._tooltip = ''
+		self._default = unicode(default)
+		self._values = []
+		self._type = type
+		self._category = category
+		self._subcategory = subcategory
+		self._expert_sub_category = None
+		self._validators = []
+		self._conditions = []
 
-        if type is types.FloatType:
-            validators.validFloat(self)
-        elif type is types.IntType:
-            validators.validInt(self)
+		if type is types.FloatType:
+			validators.validFloat(self)
+		elif type is types.IntType:
+			validators.validInt(self)
 
-        global settingsDictionary
-        settingsDictionary[name] = self
-        global settingsList
-        settingsList.append(self)
+		global settingsDictionary
+		settingsDictionary[name] = self
+		global settingsList
+		settingsList.append(self)
 
-    def setLabel(self, label, tooltip = ''):
-        self._label = label
-        self._tooltip = tooltip
-        return self
+	def setLabel(self, label, tooltip = ''):
+		self._label = label
+		self._tooltip = tooltip
+		return self
 
-    def setRange(self, minValue=None, maxValue=None):
-        if len(self._validators) < 1:
-            return
-        self._validators[0].minValue = minValue
-        self._validators[0].maxValue = maxValue
-        return self
+	def setRange(self, minValue=None, maxValue=None):
+		if len(self._validators) < 1:
+			return
+		self._validators[0].minValue = minValue
+		self._validators[0].maxValue = maxValue
+		return self
 
-    def getLabel(self):
-        return _(self._label)
+	def getLabel(self):
+		return _(self._label)
 
-    def getTooltip(self):
-        return _(self._tooltip)
+	def getTooltip(self):
+		return _(self._tooltip)
 
-    def getCategory(self):
-        return self._category
+	def getCategory(self):
+		return self._category
 
-    def getSubCategory(self):
-        return self._subcategory
+	def getSubCategory(self):
+		return self._subcategory
 
-    def getExpertSubCategory(self):
-        return self._expert_sub_category
+	def getExpertSubCategory(self):
+		return self._expert_sub_category
 
-    def setExpertSubCategory(self, expert_sub_category):
-        self._expert_sub_category = expert_sub_category
-        return self
+	def setExpertSubCategory(self, expert_sub_category):
+		self._expert_sub_category = expert_sub_category
+		return self
 
-    def isPreference(self):
-        return self._category == 'preference'
+	def isPreference(self):
+		return self._category == 'preference'
 
-    def isMachineSetting(self):
-        return self._category == 'machine'
+	def isMachineSetting(self):
+		return self._category == 'machine'
 
-    def isAlteration(self):
-        return self._category == 'alteration'
+	def isAlteration(self):
+		return self._category == 'alteration'
 
-    def isProfile(self):
-        return not self.isAlteration() and not self.isPreference() and not self.isMachineSetting()
+	def isProfile(self):
+		return not self.isAlteration() and not self.isPreference() and not self.isMachineSetting()
 
-    def getName(self):
-        return self._name
+	def getName(self):
+		return self._name
 
-    def getType(self):
-        return self._type
+	def getType(self):
+		return self._type
 
-    def getValue(self, index = None):
-        if index is None:
-            index = self.getValueIndex()
-        if index >= len(self._values):
-            return self._default
-        return self._values[index]
+	def getValue(self, index = None):
+		if index is None:
+			index = self.getValueIndex()
+		if index >= len(self._values):
+			return self._default
+		return self._values[index]
 
-    def getDefault(self):
-        return self._default
+	def getDefault(self):
+		return self._default
 
-    def setValue(self, value, index = None):
-        if index is None:
-            index = self.getValueIndex()
-        while index >= len(self._values):
-            self._values.append(self._default)
-        self._values[index] = unicode(value)
+	def setValue(self, value, index = None):
+		if index is None:
+			index = self.getValueIndex()
+		while index >= len(self._values):
+			self._values.append(self._default)
+		self._values[index] = unicode(value)
 
-    def getValueIndex(self):
-        if self.isMachineSetting() or self.isProfile() or self.isAlteration():
-            global _selectedMachineIndex
-            return _selectedMachineIndex
-        return 0
+	def getValueIndex(self):
+		if self.isMachineSetting() or self.isProfile() or self.isAlteration():
+			global _selectedMachineIndex
+			return _selectedMachineIndex
+		return 0
 
-    def validate(self):
-        result = validators.SUCCESS
-        msgs = []
-        for validator in self._validators:
-            res, err = validator.validate()
-            if res == validators.ERROR:
-                result = res
-            elif res == validators.WARNING and result != validators.ERROR:
-                result = res
-            if len(err) > 0:
-                msgs.append(err)
-        return result, '\n'.join(msgs)
+	def validate(self):
+		result = validators.SUCCESS
+		msgs = []
+		for validator in self._validators:
+			res, err = validator.validate()
+			if res == validators.ERROR:
+				result = res
+			elif res == validators.WARNING and result != validators.ERROR:
+				result = res
+			if len(err) > 0:
+				msgs.append(err)
+		return result, '\n'.join(msgs)
 
-    def addCondition(self, conditionFunction):
-        self._conditions.append(conditionFunction)
+	def addCondition(self, conditionFunction):
+		self._conditions.append(conditionFunction)
 
-    def checkConditions(self):
-        for condition in self._conditions:
-            if not condition():
-                return False
-        return True
+	def checkConditions(self):
+		for condition in self._conditions:
+			if not condition():
+				return False
+		return True
 
 #########################################################
 ## Settings
@@ -173,7 +173,7 @@ class setting(object):
 
 #Define a fake _() function to fake the gettext tools in to generating strings for the profile settings.
 def _(n):
-    return n
+	return n
 
 setting('layer_height',              0.1, float, 'basic',    _('Quality')).setRange(0.0001).setLabel(_("Layer height (mm)"), _("Layer height in millimeters.\nThis is the most important setting to determine the quality of\n your print. With BCN3D Technologies printers, normal \nquality prints are 0.2mm and high quality prints are 0.1mm"))
 setting('wall_thickness',            0.8, float, 'basic',    _('Quality')).setRange(0.0).setLabel(_("Shell thickness (mm)"), _("Thickness of the outside shell in the horizontal direction.\nThis is used in combination with the nozzle size to define the number of perimeter lines and the thickness of those \nperimeter lines."))
@@ -191,8 +191,8 @@ setting('print_bed_temperature',      45, int,   'basic',    _('Speed and Temper
 setting('support',                'None', [_('None'), _('Touching buildplate'), _('Everywhere')], 'basic', _('Support')).setExpertSubCategory(_('Support')).setLabel(_("Support type"), _("Type of support structure build.\n\"Touching buildplate\" is the most commonly used support setting.\n\nNone does not do any support.\nTouching buildplate only creates support where the support structure will touch the build platform.\nEverywhere creates support even on top of parts of the model."))
 setting('platform_adhesion',      'None', [_('None'), _('Brim'), _('Raft')], 'basic', _('Support')).setExpertSubCategory([_('Skirt'), _('Brim'), _('Raft')]).setLabel(_("Platform adhesion type"), _("Different options that help in preventing corners from lifting due to warping.\nBrim adds a single layer thick flat area around your object which is easy to cut off afterwards, and it is the recommended option.\nRaft adds a thick raster below the object and a thin interface between this and your object.\n(Note that enabling the brim or raft disables the skirt)"))
 setting('support_dual_extrusion',  'Both', [_('Both'), _('First extruder'), _('Second extruder')], 'basic', _('Support')).setLabel(_("Support dual extrusion"), _("Which extruder to use for support material, for break-away support you can use both extruders.\nBut if one of the materials is more expensive then the other you could select an extruder to use for support material. This causes more extruder switches.\nYou can also use the 2nd extruder for soluble support materials."))
-setting('wipe_tower',              False, bool,  'basic',    _('Dual extrusion')).setLabel(_("Wipe&prime tower"), _("The wipe-tower is a tower printed on every layer when switching between nozzles.\nThe old nozzle is wiped off on the tower before the new nozzle is used to print the 2nd color."))
-setting('wipe_tower_volume',          15, float, 'expert',   _('Dual extrusion')).setLabel(_("Wipe&prime tower volume per layer (mm3)"), _("The amount of material put in the wipe/prime tower.\nThis is done in volume because in general you want to extrude a\ncertain amount of volume to get the extruder going, independent on the layer height.\nThis means that with thinner layers, your tower gets bigger."))
+setting('wipe_tower',              False, bool,  'basic',    _('Dual extrusion')).setLabel(_("Wipe & prime tower"), _("The wipe-tower is a tower printed on every layer when switching between nozzles.\nThe old nozzle is wiped off on the tower before the new nozzle is used to print the 2nd color."))
+setting('wipe_tower_volume',          15, float, 'expert',   _('Dual extrusion')).setLabel(_("Wipe & prime tower volume per layer (mm3)"), _("The amount of material put in the wipe/prime tower.\nThis is done in volume because in general you want to extrude a\ncertain amount of volume to get the extruder going, independent on the layer height.\nThis means that with thinner layers, your tower gets bigger."))
 setting('ooze_shield',             False, bool,  'basic',    _('Dual extrusion')).setLabel(_("Ooze shield"), _("The ooze shield is a 1 line thick shell around the object which stands a few mm from the object.\nThis shield catches any oozing from the unused nozzle in dual-extrusion."))
 setting('filament_diameter',        2.88, float, 'basic',    _('Filament')).setRange(1).setLabel(_("Diameter (mm)"), _("Diameter of your filament, as accurately as possible.\nIf you cannot measure this value you will have to calibrate it, a higher number means less extrusion, a smaller number generates more extrusion."))
 setting('filament_diameter2',          0, float, 'basic',    _('Filament')).setRange(0).setLabel(_("Diameter2 (mm)"), _("Diameter of your filament for the 2nd nozzle. Use 0 to use the same diameter as for nozzle 1."))
@@ -273,9 +273,12 @@ G21        ;metric values
 G90        ;absolute positioning
 M82        ;set extruder to absolute mode
 M107       ;start with the fan off
+
 G28 X0 Y0  ;move X/Y to min endstops
 G28 Z0     ;move Z to min endstops
+
 G1 Z15.0 F{travel_speed} ;move the platform down 15mm
+
 G92 E0                  ;zero the extruded length
 G1 F200 E3              ;extrude 3mm of feed stock
 G92 E0                  ;zero the extruded length again
@@ -287,17 +290,17 @@ M117 Printing...
 setting('end.gcode', """;End GCode
 M104 S0                     ;extruder heater off
 M140 S0                     ;heated bed heater off (if you have it)
+
 G91                                    ;relative positioning
 G1 E-1 F300                            ;retract the filament a bit before lifting the nozzle, to release some of the pressure
 G1 Z+0.5 E-5 X-20 Y-20 F{travel_speed} ;move Z up a bit and retract filament even more
 G28 X0 Y0                              ;move X/Y to min endstops, so the head is out of the way
+
 M84                         ;steppers off
 G90                         ;absolute positioning
 ;{profile_string}
 """, str, 'alteration', 'alteration')
-
 #######################################################################################
-
 setting('start2.gcode', """;Sliced at: {day} {date} {time}
 ;Basic settings: Layer height: {layer_height} Walls: {wall_thickness} Fill: {fill_density}
 ;Print time: {print_time}
@@ -310,14 +313,18 @@ setting('start2.gcode', """;Sliced at: {day} {date} {time}
 G21        ;metric values
 G90        ;absolute positioning
 M107       ;start with the fan off
+
 G28 X0 Y0  ;move X/Y to min endstops
 G28 Z0     ;move Z to min endstops
+
 G1 Z15.0 F{travel_speed} ;move the platform down 15mm
+
 T1                      ;Switch to the 2nd extruder
 G92 E0                  ;zero the extruded length
 G1 F200 E10             ;extrude 10mm of feed stock
 G92 E0                  ;zero the extruded length again
 G1 F200 E-{retraction_dual_amount}
+
 T0                      ;Switch to the first extruder
 G92 E0                  ;zero the extruded length
 G1 F200 E10             ;extrude 10mm of feed stock
@@ -332,10 +339,12 @@ setting('end2.gcode', """;End GCode
 M104 T0 S0                     ;extruder heater off
 M104 T1 S0                     ;extruder heater off
 M140 S0                     ;heated bed heater off (if you have it)
+
 G91                                    ;relative positioning
 G1 E-1 F300                            ;retract the filament a bit before lifting the nozzle, to release some of the pressure
 G1 Z+0.5 E-5 X-20 Y-20 F{travel_speed} ;move Z up a bit and retract filament even more
 G28 X0 Y0                              ;move X/Y to min endstops, so the head is out of the way
+
 M84                         ;steppers off
 G90                         ;absolute positioning
 ;{profile_string}
@@ -356,29 +365,29 @@ setting('postSwitchExtruder.gcode', """;Switch between the current extruder and 
 """, str, 'alteration', 'alteration')
 
 setting('startMode', 'Simple', ['Simple', 'Normal'], 'preference', 'hidden')
-setting('simpleModeExtruder', '1_Left Extruder', str, 'preference', 'hidden')
-setting('simpleModeProfile', '3_normal', str, 'preference', 'hidden')
-setting('simpleModeMaterial', '1_pla', str, 'preference', 'hidden')
+setting('simpleModeProfile', 'Normal', str, 'preference', 'hidden')
+setting('simpleModeMaterial', 'Pla', str, 'preference', 'hidden')
+setting('simpleModeNozzle', '0.4', float, 'preference', 'hidden')
+setting('simpleModePlatformAdhesion', '1', str, 'preference', 'hidden')
 setting('oneAtATime', 'True', bool, 'preference', 'hidden')
 setting('lastFile', os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'resources', 'example', 'BCN3DDraudi_support.stl')), str, 'preference', 'hidden')
-#setting('lastFirmwareFile', os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'resources', 'example', 'MarlinBCN3DSigma.hex')), str, 'preference', 'hidden')
 setting('save_profile', 'False', bool, 'preference', 'hidden').setLabel(_("Save profile on slice"), _("When slicing save the profile as [stl_file]_profile.ini next to the model."))
 setting('filament_cost_kg', '0', float, 'preference', 'hidden').setLabel(_("Cost (price/kg)"), _("Cost of your filament per kg, to estimate the cost of the final print."))
 setting('filament_cost_meter', '0', float, 'preference', 'hidden').setLabel(_("Cost (price/m)"), _("Cost of your filament per meter, to estimate the cost of the final print."))
 setting('auto_detect_sd', 'True', bool, 'preference', 'hidden').setLabel(_("Auto detect SD card drive"), _("Auto detect the SD card. You can disable this because on some systems external hard-drives or USB sticks are detected as SD card."))
 
 def _getMyDocumentsFolder():
-    if platform.system() == "Windows":
-        path = os.path.expanduser('~/Documents')
-    else:
-        path = os.path.expanduser('~/')
-    if not os.path.exists(path):
-        path = ''
-    try:
-        path = unicode(path)
-    except UnicodeDecodeError:
-        path = ''
-    return path
+	if platform.system() == "Windows":
+		path = os.path.expanduser('~/Documents')
+	else:
+		path = os.path.expanduser('~/')
+	if not os.path.exists(path):
+		path = ''
+	try:
+		path = unicode(path)
+	except UnicodeDecodeError:
+		path = ''
+	return path
 
 setting('sdcard_rootfolder', _getMyDocumentsFolder(), str, 'preference', 'hidden').setLabel(_("Base folder to replicate on SD card"), _("The specified folder will be used as a base path. Any gcode generated from object coming from within that folder will be automatically saved on the SD card at the same sub-folder. Any object coming from outside of this path will save the gcode on the root folder of the card."))
 setting('check_for_updates', 'True', bool, 'preference', 'hidden').setLabel(_("Check for updates"), _("Check for newer versions of Cura on startup"))
@@ -426,6 +435,7 @@ setting('serial_port', 'AUTO', str, 'machine', 'hidden').setLabel(_("Serial port
 setting('serial_port_auto', '', str, 'machine', 'hidden')
 setting('serial_baud', 'AUTO', str, 'machine', 'hidden').setLabel(_("Baudrate"), _("Speed of the serial port communication\nNeeds to match your firmware settings\nCommon values are 250000, 115200, 57600"))
 setting('serial_baud_auto', '', int, 'machine', 'hidden')
+setting('self_serial', '', str, 'machine', 'hidden')
 
 setting('extruder_head_size_min_x', '0.0', float, 'machine', 'hidden').setLabel(_("Head size towards X min (mm)"), _("The head size when printing multiple objects, measured from the tip of the nozzle towards the outer part of the head. 75mm for an Ultimaker if the fan is on the left side."))
 setting('extruder_head_size_min_y', '0.0', float, 'machine', 'hidden').setLabel(_("Head size towards Y min (mm)"), _("The head size when printing multiple objects, measured from the tip of the nozzle towards the outer part of the head. 18mm for an Ultimaker if the fan is on the left side."))
@@ -433,40 +443,14 @@ setting('extruder_head_size_max_x', '0.0', float, 'machine', 'hidden').setLabel(
 setting('extruder_head_size_max_y', '0.0', float, 'machine', 'hidden').setLabel(_("Head size towards Y max (mm)"), _("The head size when printing multiple objects, measured from the tip of the nozzle towards the outer part of the head. 35mm for an Ultimaker if the fan is on the left side."))
 setting('extruder_head_size_height', '0.0', float, 'machine', 'hidden').setLabel(_("Printer gantry height (mm)"), _("The height of the gantry holding up the printer head. If an object is higher then this then you cannot print multiple objects one for one. 60mm for an Ultimaker."))
 
-
-# New options that we are creating for our own version of simple mode, these are for when only using one extruder
-setting('quality_fast', False, bool, 'single', _('Quality')).setLabel(_("Fast Print   "))
-setting('quality_standard', False, bool, 'single', _('Quality')).setLabel(_("Standard Quality   "))
-setting('quality_high', False, bool, 'single', _('Quality')).setLabel(_("High Quality   "))
-setting('quality_strong', False, bool, 'single', _('Quality')).setLabel(_("Strong Quality   "))
-
-setting('extruder_left', False, bool, 'single', _('Extruder')).setLabel(_("Left Extruder   "))
-setting('extruder_right', False, bool, 'single', _('Extruder')).setLabel(_("Right Extruder   "))
-
-setting('material_pla', False, bool, 'single', _('Material')).setLabel(_("PLA   "))
-setting('material_abs', False, bool, 'single', _('Material')).setLabel(_("ABS   "))
-setting('material_fila', False, bool, 'single', _('Material')).setLabel(_("FilaFlex   "))
-
-# New options that we are creating for our own version of simple mode, these are for when we are using double extruder
-setting('quality_fast_dual', False, bool, 'dual', _('Quality')).setLabel(_("Fast Print   "))
-setting('quality_standard_dual', False, bool, 'dual', _('Quality')).setLabel(_("Standard Quality   "))
-setting('quality_high_dual', False, bool, 'dual', _('Quality')).setLabel(_("High Quality   "))
-setting('quality_strong_dual', False, bool, 'dual', _('Quality')).setLabel(_("Strong Quality   "))
-
-setting('pla_left_dual', False, bool, 'dual', _('Left Material')).setLabel(_("PLA   "))
-setting('abs_left_dual', False, bool, 'dual', _('Left Material')).setLabel(_("ABS   "))
-setting('fila_left_dual', False, bool, 'dual', _('Left Material')).setLabel(_("FilaFlex   "))
-
-setting('pla_right_dual', False, bool, 'dual', _('Right Material')).setLabel(_("PLA   "))
-setting('abs_right_dual', False, bool, 'dual', _('Right Material')).setLabel(_("ABS   "))
-setting('fila_right_dual', False, bool, 'dual', _('Right Material')).setLabel(_("FilaFlex   "))
-setting('pva_right_dual', False, bool, 'dual', _('Right Material')).setLabel(_("PVA   "))
-
-setting('dual_support', False, bool, 'dual', _('Right Material')).setLabel(_("Need supports ?   "))
-#End of simple mode options
-
-settingsDictionary['extruder_right'].addCondition(lambda : getMachineSetting('machine_type') == 'BCN3DSigma')
-
+setting('machine_acceleration', '3000.0', float, 'machine', 'hidden').setLabel(_("Acceleration"), _("."))
+setting('machine_max_acceleration[0]', '9000.0', float, 'machine', 'hidden').setLabel(_("Max acceleration X"), _("."))
+setting('machine_max_acceleration[1]', '9000.0', float, 'machine', 'hidden').setLabel(_("Max acceleration Y"), _("."))
+setting('machine_max_acceleration[2]', '100.0', float, 'machine', 'hidden').setLabel(_("Max acceleration Z"), _("."))
+setting('machine_max_acceleration[3]', '10000.0', float, 'machine', 'hidden').setLabel(_("Max acceleration E"), _("."))
+setting('machine_max_xy_jerk', '20.0', float, 'machine', 'hidden').setLabel(_("XY \"Jerk\""), _("."))
+setting('machine_max_z_jerk', '0.4', float, 'machine', 'hidden').setLabel(_("Z \"Jerk\""), _("."))
+setting('machine_max_e_jerk', '5.0', float, 'machine', 'hidden').setLabel(_("E \"Jerk\""), _("."))
 
 validators.warningAbove(settingsDictionary['filament_flow'], 150, _("More flow than 150% is rare and usually not recommended."))
 validators.warningBelow(settingsDictionary['filament_flow'], 50, _("Less flow than 50% is rare and usually not recommended."))
@@ -479,11 +463,11 @@ validators.printSpeedValidator(settingsDictionary['infill_speed'])
 validators.printSpeedValidator(settingsDictionary['solidarea_speed'])
 validators.printSpeedValidator(settingsDictionary['inset0_speed'])
 validators.printSpeedValidator(settingsDictionary['insetx_speed'])
-validators.warningAbove(settingsDictionary['print_temperature'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature2'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature3'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature4'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
-validators.warningAbove(settingsDictionary['print_temperature5'], 280.0, _("Temperatures above 280C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature'], 280.0, _("Temperatures above 260C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature2'], 280.0, _("Temperatures above 260C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature3'], 280.0, _("Temperatures above 260C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature4'], 280.0, _("Temperatures above 260C could damage your machine, be careful!"))
+validators.warningAbove(settingsDictionary['print_temperature5'], 280.0, _("Temperatures above 260C could damage your machine, be careful!"))
 validators.warningAbove(settingsDictionary['filament_diameter'], 3.5, _("Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm."))
 validators.warningAbove(settingsDictionary['filament_diameter2'], 3.5, _("Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm."))
 validators.warningAbove(settingsDictionary['filament_diameter3'], 3.5, _("Are you sure your filament is that thick? Normal filament is around 3mm or 1.75mm."))
@@ -534,728 +518,725 @@ del _
 #########################################################
 
 def getSubCategoriesFor(category):
-    done = {}
-    ret = []
-    for s in settingsList:
-        if s.getCategory() == category and not s.getSubCategory() in done and s.checkConditions():
-            done[s.getSubCategory()] = True
-            ret.append(s.getSubCategory())
-    return ret
+	done = {}
+	ret = []
+	for s in settingsList:
+		if s.getCategory() == category and not s.getSubCategory() in done and s.checkConditions():
+			done[s.getSubCategory()] = True
+			ret.append(s.getSubCategory())
+	return ret
 
 def getSettingsForCategory(category, subCategory = None):
-    ret = []
-    for s in settingsList:
-        if s.getCategory() == category and (subCategory is None or s.getSubCategory() == subCategory) and s.checkConditions():
-            ret.append(s)
-    return ret
+	ret = []
+	for s in settingsList:
+		if s.getCategory() == category and (subCategory is None or s.getSubCategory() == subCategory) and s.checkConditions():
+			ret.append(s)
+	return ret
 
 ## Profile functions
 def getBasePath():
-    """
-    :return: The path in which the current configuration files are stored. This depends on the used OS.
-    """
-    if platform.system() == "Windows":
-        basePath = os.path.normpath(os.path.expanduser('~/.cura/0.1.4'))
-    elif platform.system() == "Darwin":
-        basePath = os.path.expanduser('~/Library/Application Support/Cura/%s' % version.getVersion())
-    else:
-        basePath = os.path.expanduser('~/.cura/%s' % version.getVersion())
-    if not os.path.isdir(basePath):
-        try:
-            os.makedirs(basePath)
-        except:
-            print "Failed to create directory: %s" % (basePath)
-    return basePath
-
+	"""
+	:return: The path in which the current configuration files are stored. This depends on the used OS.
+	"""
+	if platform.system() == "Windows":
+		basePath = os.path.normpath(os.path.expanduser('~/.cura/0.1.6'))
+	elif platform.system() == "Darwin":
+		basePath = os.path.expanduser('~/Library/Application Support/Cura/%s' % version.getVersion(False))
+	else:
+		basePath = os.path.expanduser('~/.cura/%s' % version.getVersion(False))
+	if not os.path.isdir(basePath):
+		try:
+			os.makedirs(basePath)
+		except:
+			print "Failed to create directory: %s" % (basePath)
+	return basePath
 
 def getAlternativeBasePaths():
-    """
-    Search for alternative installations of Cura and their preference files. Used to load configuration from older versions of Cura.
-    """
-    paths = []
-    try:
-        basePath = os.path.normpath(os.path.join(getBasePath(), '..'))
-        for subPath in os.listdir(basePath):
-            path = os.path.join(basePath, subPath)
-            if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')) and path != getBasePath():
-                paths.append(path)
-            path = os.path.join(basePath, subPath, 'Cura')
-            if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')) and path != getBasePath():
-                paths.append(path)
-        paths.sort()
+	"""
+	Search for alternative installations of Cura and their preference files. Used to load configuration from older versions of Cura.
+	"""
+	paths = []
+	try:
+		basePath = os.path.normpath(os.path.join(getBasePath(), '..'))
+		for subPath in os.listdir(basePath):
+			path = os.path.join(basePath, subPath)
+			if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')) and path != getBasePath():
+				paths.append(path)
+			path = os.path.join(basePath, subPath, 'Cura')
+			if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')) and path != getBasePath():
+				paths.append(path)
+		paths.sort()
 
-        if sys.platform.startswith('win'):
-            extra_list = []
-            #Check the old base path, which was in the application directory.
-            basePath = "C:\\program files (x86)\\"
-            for subPath in os.listdir(basePath):
-                path = os.path.join(basePath, subPath)
-                if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
-                    extra_list.append(path)
-                path = os.path.join(basePath, subPath, 'Cura')
-                if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
-                    extra_list.append(path)
-            basePath = "C:\\program files\\"
-            for subPath in os.listdir(basePath):
-                path = os.path.join(basePath, subPath)
-                if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
-                    extra_list.append(path)
-                path = os.path.join(basePath, subPath, 'Cura')
-                if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
-                    extra_list.append(path)
-            extra_list.sort()
-            paths = extra_list + paths
-    except:
-        import traceback
-        print traceback.print_exc()
+		if sys.platform.startswith('win'):
+			extra_list = []
+			#Check the old base path, which was in the application directory.
+			basePath = "C:\\program files (x86)\\"
+			for subPath in os.listdir(basePath):
+				path = os.path.join(basePath, subPath)
+				if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
+					extra_list.append(path)
+				path = os.path.join(basePath, subPath, 'Cura')
+				if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
+					extra_list.append(path)
+			basePath = "C:\\program files\\"
+			for subPath in os.listdir(basePath):
+				path = os.path.join(basePath, subPath)
+				if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
+					extra_list.append(path)
+				path = os.path.join(basePath, subPath, 'Cura')
+				if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'preferences.ini')):
+					extra_list.append(path)
+			extra_list.sort()
+			paths = extra_list + paths
+	except:
+		import traceback
+		print traceback.print_exc()
 
-    return paths
+	return paths
 
 def getDefaultProfilePath():
-    """
-    :return: The default path where the currently used profile is stored and loaded on open and close of Cura.
-    """
-    return os.path.join(getBasePath(), 'current_profile.ini')
-
+	"""
+	:return: The default path where the currently used profile is stored and loaded on open and close of Cura.
+	"""
+	return os.path.join(getBasePath(), 'current_profile.ini')
 
 def loadProfile(filename, allMachines = False):
-    """
-        Read a profile file as active profile settings.
-    :param filename:    The ini filename to save the profile in.
-    :param allMachines: When False only the current active profile is saved. If True all profiles for all machines are saved.
-    """
-    global settingsList
-    profileParser = ConfigParser.ConfigParser()
-    try:
-        profileParser.read(filename)
-    except ConfigParser.ParsingError:
-        return
-    if allMachines:
-        n = 0
-        while profileParser.has_section('profile_%d' % (n)):
-            for set in settingsList:
-                if set.isPreference():
-                    continue
-                section = 'profile_%d' % (n)
-                if set.isAlteration():
-                    section = 'alterations_%d' % (n)
-                if profileParser.has_option(section, set.getName()):
-                    set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'), n)
-            n += 1
-    else:
-        for set in settingsList:
-            if set.isPreference():
-                continue
-            section = 'profile'
-            if set.isAlteration():
-                section = 'alterations'
-            if profileParser.has_option(section, set.getName()):
-                set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'))
-    #Upgrade setting from older ini file
-    if getProfileSetting('retraction_combing') == '1':
-        putProfileSetting('retraction_combing', 'All')
+	"""
+		Read a profile file as active profile settings.
+	:param filename:    The ini filename to save the profile in.
+	:param allMachines: When False only the current active profile is saved. If True all profiles for all machines are saved.
+	"""
+	global settingsList
+	profileParser = ConfigParser.ConfigParser()
+	try:
+		profileParser.read(filename)
+	except ConfigParser.ParsingError:
+		return
+	if allMachines:
+		n = 0
+		while profileParser.has_section('profile_%d' % (n)):
+			for set in settingsList:
+				if set.isPreference():
+					continue
+				section = 'profile_%d' % (n)
+				if set.isAlteration():
+					section = 'alterations_%d' % (n)
+				if profileParser.has_option(section, set.getName()):
+					set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'), n)
+			n += 1
+	else:
+		for set in settingsList:
+			if set.isPreference():
+				continue
+			section = 'profile'
+			if set.isAlteration():
+				section = 'alterations'
+			if profileParser.has_option(section, set.getName()):
+				set.setValue(unicode(profileParser.get(section, set.getName()), 'utf-8', 'replace'))
+	#Upgrade setting from older ini file
+	if getProfileSetting('retraction_combing') == '1':
+		putProfileSetting('retraction_combing', 'All')
 
 def saveProfile(filename, allMachines = False):
-    """
-        Save the current profile to an ini file.
-    :param filename:    The ini filename to save the profile in.
-    :param allMachines: When False only the current active profile is saved. If True all profiles for all machines are saved.
-    """
-    global settingsList
-    profileParser = ConfigParser.ConfigParser()
-    if allMachines:
-        for set in settingsList:
-            if set.isPreference() or set.isMachineSetting():
-                continue
-            for n in xrange(0, getMachineCount()):
-                if set.isAlteration():
-                    section = 'alterations_%d' % (n)
-                else:
-                    section = 'profile_%d' % (n)
-                if not profileParser.has_section(section):
-                    profileParser.add_section(section)
-                profileParser.set(section, set.getName(), set.getValue(n).encode('utf-8'))
-    else:
-        profileParser.add_section('profile')
-        profileParser.add_section('alterations')
-        for set in settingsList:
-            if set.isPreference() or set.isMachineSetting():
-                continue
-            if set.isAlteration():
-                profileParser.set('alterations', set.getName(), set.getValue().encode('utf-8'))
-            else:
-                profileParser.set('profile', set.getName(), set.getValue().encode('utf-8'))
+	"""
+		Save the current profile to an ini file.
+	:param filename:    The ini filename to save the profile in.
+	:param allMachines: When False only the current active profile is saved. If True all profiles for all machines are saved.
+	"""
+	global settingsList
+	profileParser = ConfigParser.ConfigParser()
+	if allMachines:
+		for set in settingsList:
+			if set.isPreference() or set.isMachineSetting():
+				continue
+			for n in xrange(0, getMachineCount()):
+				if set.isAlteration():
+					section = 'alterations_%d' % (n)
+				else:
+					section = 'profile_%d' % (n)
+				if not profileParser.has_section(section):
+					profileParser.add_section(section)
+				profileParser.set(section, set.getName(), set.getValue(n).encode('utf-8'))
+	else:
+		profileParser.add_section('profile')
+		profileParser.add_section('alterations')
+		for set in settingsList:
+			if set.isPreference() or set.isMachineSetting():
+				continue
+			if set.isAlteration():
+				profileParser.set('alterations', set.getName(), set.getValue().encode('utf-8'))
+			else:
+				profileParser.set('profile', set.getName(), set.getValue().encode('utf-8'))
 
-    try:
-        profileParser.write(open(filename, 'w'))
-    except:
-        print "Failed to write profile file: %s" % (filename)
+	try:
+		profileParser.write(open(filename, 'w'))
+	except:
+		print "Failed to write profile file: %s" % (filename)
 
 def saveProfileDifferenceFromDefault(filename):
-    """
-        Save the current profile to an ini file. Only save the profile settings that differ from the default settings.
-    :param filename:    The ini filename to save the profile in.
-    """
-    global settingsList
-    profileParser = ConfigParser.ConfigParser()
-    profileParser.add_section('profile')
-    for set in settingsList:
-        if set.isPreference() or set.isMachineSetting() or set.isAlteration():
-            continue
-        if set.getDefault() == set.getValue():
-            continue
-        profileParser.set('profile', set.getName(), set.getValue().encode('utf-8'))
-    try:
-        profileParser.write(open(filename, 'w'))
-    except:
-        print "Failed to write profile file: %s" % (filename)
+	"""
+		Save the current profile to an ini file. Only save the profile settings that differ from the default settings.
+	:param filename:    The ini filename to save the profile in.
+	"""
+	global settingsList
+	profileParser = ConfigParser.ConfigParser()
+	profileParser.add_section('profile')
+	for set in settingsList:
+		if set.isPreference() or set.isMachineSetting() or set.isAlteration():
+			continue
+		if set.getDefault() == set.getValue():
+			continue
+		profileParser.set('profile', set.getName(), set.getValue().encode('utf-8'))
+	try:
+		profileParser.write(open(filename, 'w'))
+	except:
+		print "Failed to write profile file: %s" % (filename)
 
 def resetProfile():
-    """ Reset the profile for the current machine to default. """
-    global settingsList
-    for set in settingsList:
-        if not set.isProfile():
-            continue
-        set.setValue(set.getDefault())
+	""" Reset the profile for the current machine to default. """
+	global settingsList
+	for set in settingsList:
+		if not set.isProfile():
+			continue
+		set.setValue(set.getDefault())
 
-    if getMachineSetting('machine_type') == 'ultimaker':
-        putProfileSetting('nozzle_size', '0.4')
-        if getMachineSetting('ultimaker_extruder_upgrade') == 'True':
-            putProfileSetting('retraction_enable', 'True')
-    elif getMachineSetting('machine_type') == 'ultimaker_plus':
-        putProfileSetting('nozzle_size', '0.4')
-        putProfileSetting('retraction_enable', 'True')
-    elif getMachineSetting('machine_type').startswith('ultimaker2'):
-        putProfileSetting('nozzle_size', '0.4')
-        putProfileSetting('retraction_enable', 'True')
-    else:
-        putProfileSetting('nozzle_size', '0.5')
-        putProfileSetting('retraction_enable', 'True')
+	if getMachineSetting('machine_type') == 'ultimaker':
+		putProfileSetting('nozzle_size', '0.4')
+		if getMachineSetting('ultimaker_extruder_upgrade') == 'True':
+			putProfileSetting('retraction_enable', 'True')
+	elif getMachineSetting('machine_type') == 'ultimaker_plus':
+		putProfileSetting('nozzle_size', '0.4')
+		putProfileSetting('retraction_enable', 'True')
+	elif getMachineSetting('machine_type').startswith('ultimaker2'):
+		putProfileSetting('nozzle_size', '0.4')
+		putProfileSetting('retraction_enable', 'True')
+	else:
+		putProfileSetting('nozzle_size', '0.5')
+		putProfileSetting('retraction_enable', 'True')
 
 def setProfileFromString(options):
-    """
-    Parse an encoded string which has all the profile settings stored inside of it.
-    Used in combination with getProfileString to ease sharing of profiles.
-    """
-    options = base64.b64decode(options)
-    options = zlib.decompress(options)
-    (profileOpts, alt) = options.split('\f', 1)
-    global settingsDictionary
-    for option in profileOpts.split('\b'):
-        if len(option) > 0:
-            (key, value) = option.split('=', 1)
-            if key in settingsDictionary:
-                if settingsDictionary[key].isProfile():
-                    settingsDictionary[key].setValue(value)
-    for option in alt.split('\b'):
-        if len(option) > 0:
-            (key, value) = option.split('=', 1)
-            if key in settingsDictionary:
-                if settingsDictionary[key].isAlteration():
-                    settingsDictionary[key].setValue(value)
+	"""
+	Parse an encoded string which has all the profile settings stored inside of it.
+	Used in combination with getProfileString to ease sharing of profiles.
+	"""
+	options = base64.b64decode(options)
+	options = zlib.decompress(options)
+	(profileOpts, alt) = options.split('\f', 1)
+	global settingsDictionary
+	for option in profileOpts.split('\b'):
+		if len(option) > 0:
+			(key, value) = option.split('=', 1)
+			if key in settingsDictionary:
+				if settingsDictionary[key].isProfile():
+					settingsDictionary[key].setValue(value)
+	for option in alt.split('\b'):
+		if len(option) > 0:
+			(key, value) = option.split('=', 1)
+			if key in settingsDictionary:
+				if settingsDictionary[key].isAlteration():
+					settingsDictionary[key].setValue(value)
 
 def getProfileString():
-    """
-    Get an encoded string which contains all profile settings.
-    Used in combination with setProfileFromString to share settings in files, forums or other text based ways.
-    """
-    p = []
-    alt = []
-    global settingsList
-    for set in settingsList:
-        if set.isProfile():
-            if set.getName() in tempOverride:
-                p.append(set.getName() + "=" + tempOverride[set.getName()])
-            else:
-                p.append(set.getName() + "=" + set.getValue().encode('utf-8'))
-        elif set.isAlteration():
-            if set.getName() in tempOverride:
-                alt.append(set.getName() + "=" + tempOverride[set.getName()])
-            else:
-                alt.append(set.getName() + "=" + set.getValue().encode('utf-8'))
-    ret = '\b'.join(p) + '\f' + '\b'.join(alt)
-    ret = base64.b64encode(zlib.compress(ret, 9))
-    return ret
+	"""
+	Get an encoded string which contains all profile settings.
+	Used in combination with setProfileFromString to share settings in files, forums or other text based ways.
+	"""
+	p = []
+	alt = []
+	global settingsList
+	for set in settingsList:
+		if set.isProfile():
+			if set.getName() in tempOverride:
+				p.append(set.getName() + "=" + tempOverride[set.getName()])
+			else:
+				p.append(set.getName() + "=" + set.getValue().encode('utf-8'))
+		elif set.isAlteration():
+			if set.getName() in tempOverride:
+				alt.append(set.getName() + "=" + tempOverride[set.getName()])
+			else:
+				alt.append(set.getName() + "=" + set.getValue().encode('utf-8'))
+	ret = '\b'.join(p) + '\f' + '\b'.join(alt)
+	ret = base64.b64encode(zlib.compress(ret, 9))
+	return ret
 
 def insertNewlines(string, every=64): #This should be moved to a better place then profile.
-    lines = []
-    for i in xrange(0, len(string), every):
-        lines.append(string[i:i+every])
-    return '\n'.join(lines)
+	lines = []
+	for i in xrange(0, len(string), every):
+		lines.append(string[i:i+every])
+	return '\n'.join(lines)
 
 def getPreferencesString():
-    """
-    :return: An encoded string which contains all the current preferences.
-    """
-    p = []
-    global settingsList
-    for set in settingsList:
-        if (set.isPreference() and set.getName() != 'lastFile' and set.getName() != 'youmagine_token') or set.isMachineSetting():
-            p.append(set.getName() + "=" + set.getValue().encode('utf-8'))
-    ret = '\b'.join(p)
-    ret = base64.b64encode(zlib.compress(ret, 9))
-    return ret
+	"""
+	:return: An encoded string which contains all the current preferences.
+	"""
+	p = []
+	global settingsList
+	for set in settingsList:
+		if (set.isPreference() and set.getName() != 'lastFile' and set.getName() != 'youmagine_token') or set.isMachineSetting():
+			p.append(set.getName() + "=" + set.getValue().encode('utf-8'))
+	ret = '\b'.join(p)
+	ret = base64.b64encode(zlib.compress(ret, 9))
+	return ret
 
 
 def getProfileSetting(name):
-    """
-        Get the value of an profile setting.
-    :param name: Name of the setting to retrieve.
-    :return:     Value of the current setting.
-    """
-    if name in tempOverride:
-        return tempOverride[name]
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isProfile():
-        return settingsDictionary[name].getValue()
-    traceback.print_stack()
-    sys.stderr.write('Error: "%s" not found in profile settings\n' % (name))
-    return ''
+	"""
+		Get the value of an profile setting.
+	:param name: Name of the setting to retrieve.
+	:return:     Value of the current setting.
+	"""
+	if name in tempOverride:
+		return tempOverride[name]
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isProfile():
+		return settingsDictionary[name].getValue()
+	traceback.print_stack()
+	sys.stderr.write('Error: "%s" not found in profile settings\n' % (name))
+	return ''
 
 def getProfileSettingFloat(name):
-    try:
-        setting = getProfileSetting(name).replace(',', '.')
-        return float(eval(setting, {}, {}))
-    except:
-        return 0.0
+	try:
+		setting = getProfileSetting(name).replace(',', '.')
+		return float(eval(setting, {}, {}))
+	except:
+		return 0.0
 
 def putProfileSetting(name, value):
-    """ Store a certain value in a profile setting. """
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isProfile():
-        settingsDictionary[name].setValue(value)
+	""" Store a certain value in a profile setting. """
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isProfile():
+		settingsDictionary[name].setValue(value)
 
 def isProfileSetting(name):
-    """ Check if a certain key name is actually a profile value. """
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isProfile():
-        return True
-    return False
+	""" Check if a certain key name is actually a profile value. """
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isProfile():
+		return True
+	return False
 
 ## Preferences functions
 def getPreferencePath():
-    """
-    :return: The full path of the preference ini file.
-    """
-    return os.path.join(getBasePath(), 'preferences.ini')
+	"""
+	:return: The full path of the preference ini file.
+	"""
+	return os.path.join(getBasePath(), 'preferences.ini')
 
 def getPreferenceFloat(name):
-    """
-    Get the float value of a preference, returns 0.0 if the preference is not a invalid float
-    """
-    try:
-        setting = getPreference(name).replace(',', '.')
-        return float(eval(setting, {}, {}))
-    except:
-        return 0.0
+	"""
+	Get the float value of a preference, returns 0.0 if the preference is not a invalid float
+	"""
+	try:
+		setting = getPreference(name).replace(',', '.')
+		return float(eval(setting, {}, {}))
+	except:
+		return 0.0
 
 def getPreferenceColour(name):
-    """
-    Get a preference setting value as a color array. The color is stored as #RRGGBB hex string in the setting.
-    """
-    colorString = getPreference(name)
-    return [float(int(colorString[1:3], 16)) / 255, float(int(colorString[3:5], 16)) / 255, float(int(colorString[5:7], 16)) / 255, 1.0]
+	"""
+	Get a preference setting value as a color array. The color is stored as #RRGGBB hex string in the setting.
+	"""
+	colorString = getPreference(name)
+	return [float(int(colorString[1:3], 16)) / 255, float(int(colorString[3:5], 16)) / 255, float(int(colorString[5:7], 16)) / 255, 1.0]
 
 def loadPreferences(filename):
-    """
-    Read a configuration file as global config
-    """
-    global settingsList
-    profileParser = ConfigParser.ConfigParser()
-    try:
-        profileParser.read(filename)
-    except ConfigParser.ParsingError:
-        return
+	"""
+	Read a configuration file as global config
+	"""
+	global settingsList
+	profileParser = ConfigParser.ConfigParser()
+	try:
+		profileParser.read(filename)
+	except ConfigParser.ParsingError:
+		return
 
-    for set in settingsList:
-        if set.isPreference():
-            if profileParser.has_option('preference', set.getName()):
-                set.setValue(unicode(profileParser.get('preference', set.getName()), 'utf-8', 'replace'))
+	for set in settingsList:
+		if set.isPreference():
+			if profileParser.has_option('preference', set.getName()):
+				set.setValue(unicode(profileParser.get('preference', set.getName()), 'utf-8', 'replace'))
 
-    n = 0
-    while profileParser.has_section('machine_%d' % (n)):
-        for set in settingsList:
-            if set.isMachineSetting():
-                if profileParser.has_option('machine_%d' % (n), set.getName()):
-                    set.setValue(unicode(profileParser.get('machine_%d' % (n), set.getName()), 'utf-8', 'replace'), n)
-        n += 1
+	n = 0
+	while profileParser.has_section('machine_%d' % (n)):
+		for set in settingsList:
+			if set.isMachineSetting():
+				if profileParser.has_option('machine_%d' % (n), set.getName()):
+					set.setValue(unicode(profileParser.get('machine_%d' % (n), set.getName()), 'utf-8', 'replace'), n)
+		n += 1
 
-    setActiveMachine(int(getPreferenceFloat('active_machine')))
+	setActiveMachine(int(getPreferenceFloat('active_machine')))
 
 def loadMachineSettings(filename):
-    global settingsList
-    #Read a configuration file as global config
-    profileParser = ConfigParser.ConfigParser()
-    try:
-        profileParser.read(filename)
-    except ConfigParser.ParsingError:
-        return
+	global settingsList
+	#Read a configuration file as global config
+	profileParser = ConfigParser.ConfigParser()
+	try:
+		profileParser.read(filename)
+	except ConfigParser.ParsingError:
+		return
 
-    for set in settingsList:
-        if set.isMachineSetting():
-            if profileParser.has_option('machine', set.getName()):
-                set.setValue(unicode(profileParser.get('machine', set.getName()), 'utf-8', 'replace'))
-    checkAndUpdateMachineName()
+	for set in settingsList:
+		if set.isMachineSetting():
+			if profileParser.has_option('machine', set.getName()):
+				set.setValue(unicode(profileParser.get('machine', set.getName()), 'utf-8', 'replace'))
+	checkAndUpdateMachineName()
 
 def savePreferences(filename):
-    global settingsList
-    #Save the current profile to an ini file
-    parser = ConfigParser.ConfigParser()
-    parser.add_section('preference')
+	global settingsList
+	#Save the current profile to an ini file
+	parser = ConfigParser.ConfigParser()
+	parser.add_section('preference')
 
-    for set in settingsList:
-        if set.isPreference():
-            parser.set('preference', set.getName(), set.getValue().encode('utf-8'))
+	for set in settingsList:
+		if set.isPreference():
+			parser.set('preference', set.getName(), set.getValue().encode('utf-8'))
 
-    n = 0
-    while getMachineSetting('machine_name', n) != '':
-        parser.add_section('machine_%d' % (n))
-        for set in settingsList:
-            if set.isMachineSetting():
-                parser.set('machine_%d' % (n), set.getName(), set.getValue(n).encode('utf-8'))
-        n += 1
-    try:
-        parser.write(open(filename, 'w'))
-    except:
-        print "Failed to write preferences file: %s" % (filename)
+	n = 0
+	while getMachineSetting('machine_name', n) != '':
+		parser.add_section('machine_%d' % (n))
+		for set in settingsList:
+			if set.isMachineSetting():
+				parser.set('machine_%d' % (n), set.getName(), set.getValue(n).encode('utf-8'))
+		n += 1
+	try:
+		parser.write(open(filename, 'w'))
+	except:
+		print "Failed to write preferences file: %s" % (filename)
 
 def getPreference(name):
-    if name in tempOverride:
-        return tempOverride[name]
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isPreference():
-        return settingsDictionary[name].getValue()
-    traceback.print_stack()
-    sys.stderr.write('Error: "%s" not found in preferences\n' % (name))
-    return ''
+	if name in tempOverride:
+		return tempOverride[name]
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isPreference():
+		return settingsDictionary[name].getValue()
+	traceback.print_stack()
+	sys.stderr.write('Error: "%s" not found in preferences\n' % (name))
+	return ''
 
 def putPreference(name, value):
-    #Check if we have a configuration file loaded, else load the default.
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isPreference():
-        settingsDictionary[name].setValue(value)
-        savePreferences(getPreferencePath())
-        return
-    traceback.print_stack()
-    sys.stderr.write('Error: "%s" not found in preferences\n' % (name))
+	#Check if we have a configuration file loaded, else load the default.
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isPreference():
+		settingsDictionary[name].setValue(value)
+		savePreferences(getPreferencePath())
+		return
+	traceback.print_stack()
+	sys.stderr.write('Error: "%s" not found in preferences\n' % (name))
 
 def isPreference(name):
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isPreference():
-        return True
-    return False
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isPreference():
+		return True
+	return False
 
 def getMachineSettingFloat(name, index = None):
-    try:
-        setting = getMachineSetting(name, index).replace(',', '.')
-        return float(eval(setting, {}, {}))
-    except:
-        return 0.0
+	try:
+		setting = getMachineSetting(name, index).replace(',', '.')
+		return float(eval(setting, {}, {}))
+	except:
+		return 0.0
 
 def getMachineSetting(name, index = None):
-    if name in tempOverride:
-        return tempOverride[name]
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isMachineSetting():
-        return settingsDictionary[name].getValue(index)
-    traceback.print_stack()
-    sys.stderr.write('Error: "%s" not found in machine settings\n' % (name))
-    return ''
+	if name in tempOverride:
+		return tempOverride[name]
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isMachineSetting():
+		return settingsDictionary[name].getValue(index)
+	traceback.print_stack()
+	sys.stderr.write('Error: "%s" not found in machine settings\n' % (name))
+	return ''
 
 def putMachineSetting(name, value, index = None):
-    #Check if we have a configuration file loaded, else load the default.
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isMachineSetting():
-        settingsDictionary[name].setValue(value, index)
-    savePreferences(getPreferencePath())
+	#Check if we have a configuration file loaded, else load the default.
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isMachineSetting():
+		settingsDictionary[name].setValue(value, index)
+	savePreferences(getPreferencePath())
 
 def isMachineSetting(name):
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isMachineSetting():
-        return True
-    return False
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isMachineSetting():
+		return True
+	return False
 
 def checkAndUpdateMachineName():
-    global _selectedMachineIndex
-    name = getMachineSetting('machine_name')
-    index = None
-    if name == '':
-        name = getMachineSetting('machine_type')
-    for n in xrange(0, getMachineCount()):
-        if n == _selectedMachineIndex:
-            continue
-        if index is None:
-            if name == getMachineSetting('machine_name', n):
-                index = 1
-        else:
-            if '%s (%d)' % (name, index) == getMachineSetting('machine_name', n):
-                index += 1
-    if index is not None:
-        name = '%s (%d)' % (name, index)
-    putMachineSetting('machine_name', name)
-    putPreference('active_machine', _selectedMachineIndex)
+	global _selectedMachineIndex
+	name = getMachineSetting('machine_name')
+	index = None
+	if name == '':
+		name = getMachineSetting('machine_type')
+	for n in xrange(0, getMachineCount()):
+		if n == _selectedMachineIndex:
+			continue
+		if index is None:
+			if name == getMachineSetting('machine_name', n):
+				index = 1
+		else:
+			if '%s (%d)' % (name, index) == getMachineSetting('machine_name', n):
+				index += 1
+	if index is not None:
+		name = '%s (%d)' % (name, index)
+	putMachineSetting('machine_name', name)
+	putPreference('active_machine', _selectedMachineIndex)
 
 def getMachineCount():
-    n = 0
-    while getMachineSetting('machine_name', n) != '':
-        n += 1
-    if n < 1:
-        return 1
-    return n
+	n = 0
+	while getMachineSetting('machine_name', n) != '':
+		n += 1
+	if n < 1:
+		return 1
+	return n
 
 def setActiveMachine(index):
-    global _selectedMachineIndex
-    _selectedMachineIndex = index
-    putPreference('active_machine', _selectedMachineIndex)
+	global _selectedMachineIndex
+	_selectedMachineIndex = index
+	putPreference('active_machine', _selectedMachineIndex)
 
 def removeMachine(index):
-    global _selectedMachineIndex
-    global settingsList
-    if getMachineCount() < 2:
-        return
-    for n in xrange(index, getMachineCount()):
-        for setting in settingsList:
-            if setting.isMachineSetting():
-                setting.setValue(setting.getValue(n+1), n)
+	global _selectedMachineIndex
+	global settingsList
+	if getMachineCount() < 2:
+		return
+	for n in xrange(index, getMachineCount()):
+		for setting in settingsList:
+			if setting.isMachineSetting():
+				setting.setValue(setting.getValue(n+1), n)
 
-    if _selectedMachineIndex >= index:
-        setActiveMachine(getMachineCount() - 1)
+	if _selectedMachineIndex >= index:
+		setActiveMachine(getMachineCount() - 1)
 
 ## Temp overrides for multi-extruder slicing and the project planner.
 tempOverride = {}
 def setTempOverride(name, value):
-    tempOverride[name] = unicode(value).encode("utf-8")
+	tempOverride[name] = unicode(value).encode("utf-8")
 def clearTempOverride(name):
-    del tempOverride[name]
+	del tempOverride[name]
 def resetTempOverride():
-    tempOverride.clear()
+	tempOverride.clear()
 
 #########################################################
 ## Utility functions to calculate common profile values
 #########################################################
 def calculateEdgeWidth():
-    wallThickness = getProfileSettingFloat('wall_thickness')
-    nozzleSize = getProfileSettingFloat('nozzle_size')
+	wallThickness = getProfileSettingFloat('wall_thickness')
+	nozzleSize = getProfileSettingFloat('nozzle_size')
 
-    if getProfileSetting('spiralize') == 'True' or getProfileSetting('simple_mode') == 'True':
-        return wallThickness
+	if getProfileSetting('spiralize') == 'True' or getProfileSetting('simple_mode') == 'True':
+		return wallThickness
 
-    if wallThickness < 0.01:
-        return nozzleSize
-    if wallThickness < nozzleSize:
-        return wallThickness
+	if wallThickness < 0.01:
+		return nozzleSize
+	if wallThickness < nozzleSize:
+		return wallThickness
 
-    lineCount = int(wallThickness / (nozzleSize - 0.0001))
-    if lineCount == 0:
-        return nozzleSize
-    lineWidth = wallThickness / lineCount
-    lineWidthAlt = wallThickness / (lineCount + 1)
-    if lineWidth > nozzleSize * 1.5:
-        return lineWidthAlt
-    return lineWidth
+	lineCount = int(wallThickness / (nozzleSize - 0.0001))
+	if lineCount == 0:
+		return nozzleSize
+	lineWidth = wallThickness / lineCount
+	lineWidthAlt = wallThickness / (lineCount + 1)
+	if lineWidth > nozzleSize * 1.5:
+		return lineWidthAlt
+	return lineWidth
 
 def calculateLineCount():
-    wallThickness = getProfileSettingFloat('wall_thickness')
-    nozzleSize = getProfileSettingFloat('nozzle_size')
+	wallThickness = getProfileSettingFloat('wall_thickness')
+	nozzleSize = getProfileSettingFloat('nozzle_size')
 
-    if wallThickness < 0.01:
-        return 0
-    if wallThickness < nozzleSize:
-        return 1
-    if getProfileSetting('spiralize') == 'True' or getProfileSetting('simple_mode') == 'True':
-        return 1
+	if wallThickness < 0.01:
+		return 0
+	if wallThickness < nozzleSize:
+		return 1
+	if getProfileSetting('spiralize') == 'True' or getProfileSetting('simple_mode') == 'True':
+		return 1
 
-    lineCount = int(wallThickness / (nozzleSize - 0.0001))
-    if lineCount < 1:
-        lineCount = 1
-    lineWidth = wallThickness / lineCount
-    lineWidthAlt = wallThickness / (lineCount + 1)
-    if lineWidth > nozzleSize * 1.5:
-        return lineCount + 1
-    return lineCount
+	lineCount = int(wallThickness / (nozzleSize - 0.0001))
+	if lineCount < 1:
+		lineCount = 1
+	lineWidth = wallThickness / lineCount
+	lineWidthAlt = wallThickness / (lineCount + 1)
+	if lineWidth > nozzleSize * 1.5:
+		return lineCount + 1
+	return lineCount
 
 def calculateSolidLayerCount():
-    layerHeight = getProfileSettingFloat('layer_height')
-    solidThickness = getProfileSettingFloat('solid_layer_thickness')
-    if layerHeight == 0.0:
-        return 1
-    return int(math.ceil((solidThickness - 0.0001) / layerHeight))
+	layerHeight = getProfileSettingFloat('layer_height')
+	solidThickness = getProfileSettingFloat('solid_layer_thickness')
+	if layerHeight == 0.0:
+		return 1
+	return int(math.ceil((solidThickness - 0.0001) / layerHeight))
 
 def calculateObjectSizeOffsets():
-    size = 0.0
+	size = 0.0
 
-    if getProfileSetting('platform_adhesion') == 'Brim':
-        size += getProfileSettingFloat('brim_line_count') * calculateEdgeWidth()
-    elif getProfileSetting('platform_adhesion') == 'Raft':
-        pass
-    else:
-        if getProfileSettingFloat('skirt_line_count') > 0:
-            size += getProfileSettingFloat('skirt_line_count') * calculateEdgeWidth() + getProfileSettingFloat('skirt_gap')
+	if getProfileSetting('platform_adhesion') == 'Brim':
+		size += getProfileSettingFloat('brim_line_count') * calculateEdgeWidth()
+	elif getProfileSetting('platform_adhesion') == 'Raft':
+		pass
+	else:
+		if getProfileSettingFloat('skirt_line_count') > 0:
+			size += getProfileSettingFloat('skirt_line_count') * calculateEdgeWidth() + getProfileSettingFloat('skirt_gap')
 
-    #if getProfileSetting('enable_raft') != 'False':
-    #	size += profile.getProfileSettingFloat('raft_margin') * 2
-    #if getProfileSetting('support') != 'None':
-    #	extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
-    #	extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
-    return [size, size]
+	#if getProfileSetting('enable_raft') != 'False':
+	#	size += profile.getProfileSettingFloat('raft_margin') * 2
+	#if getProfileSetting('support') != 'None':
+	#	extraSizeMin = extraSizeMin + numpy.array([3.0, 0, 0])
+	#	extraSizeMax = extraSizeMax + numpy.array([3.0, 0, 0])
+	return [size, size]
 
 def getMachineCenterCoords():
-    if getMachineSetting('machine_center_is_zero') == 'True':
-        return [0, 0]
-    return [getMachineSettingFloat('machine_width') / 2, getMachineSettingFloat('machine_depth') / 2]
+	if getMachineSetting('machine_center_is_zero') == 'True':
+		return [0.0, 0.0]
+	return [getMachineSettingFloat('machine_width') / 2, getMachineSettingFloat('machine_depth') / 2]
 
 #Returns a list of convex polygons, first polygon is the allowed area of the machine,
 # the rest of the polygons are the dis-allowed areas of the machine.
 def getMachineSizePolygons():
-    size = numpy.array([getMachineSettingFloat('machine_width'), getMachineSettingFloat('machine_depth'), getMachineSettingFloat('machine_height')], numpy.float32)
-    ret = []
-    if getMachineSetting('machine_shape') == 'Circular':
-        # Circle platform for delta printers...
-        circle = []
-        steps = 32
-        for n in xrange(0, steps):
-            circle.append([math.cos(float(n)/steps*2*math.pi) * size[0]/2, math.sin(float(n)/steps*2*math.pi) * size[1]/2])
-        ret.append(numpy.array(circle, numpy.float32))
-    else:
-        ret.append(numpy.array([[-size[0]/2,-size[1]/2],[size[0]/2,-size[1]/2],[size[0]/2, size[1]/2], [-size[0]/2, size[1]/2]], numpy.float32))
+	size = numpy.array([getMachineSettingFloat('machine_width'), getMachineSettingFloat('machine_depth'), getMachineSettingFloat('machine_height')], numpy.float32)
+	ret = []
+	if getMachineSetting('machine_shape') == 'Circular':
+		# Circle platform for delta printers...
+		circle = []
+		steps = 32
+		for n in xrange(0, steps):
+			circle.append([math.cos(float(n)/steps*2*math.pi) * size[0]/2, math.sin(float(n)/steps*2*math.pi) * size[1]/2])
+		ret.append(numpy.array(circle, numpy.float32))
+	else:
+		ret.append(numpy.array([[-size[0]/2,-size[1]/2],[size[0]/2,-size[1]/2],[size[0]/2, size[1]/2], [-size[0]/2, size[1]/2]], numpy.float32))
 
-    if getMachineSetting('machine_type').startswith('ultimaker2'):
-        #UM2 no-go zones
-        w = 25
-        w2 = 5
-        h = 8
-        if getMachineSetting('machine_type') == 'ultimaker2go':
-            w2 = 25
-        ret.append(numpy.array([[-size[0]/2,-size[1]/2],[-size[0]/2+w+2,-size[1]/2], [-size[0]/2+w,-size[1]/2+h], [-size[0]/2,-size[1]/2+h]], numpy.float32))
-        ret.append(numpy.array([[ size[0]/2-w2-2,-size[1]/2],[ size[0]/2,-size[1]/2], [ size[0]/2,-size[1]/2+h],[ size[0]/2-w2,-size[1]/2+h]], numpy.float32))
-        ret.append(numpy.array([[-size[0]/2+w+2, size[1]/2],[-size[0]/2, size[1]/2], [-size[0]/2, size[1]/2-h],[-size[0]/2+w, size[1]/2-h]], numpy.float32))
-        ret.append(numpy.array([[ size[0]/2, size[1]/2],[ size[0]/2-w2-2, size[1]/2], [ size[0]/2-w2, size[1]/2-h],[ size[0]/2, size[1]/2-h]], numpy.float32))
-    return ret
+	if getMachineSetting('machine_type').startswith('ultimaker2'):
+		#UM2 no-go zones
+		w = 25
+		w2 = 5
+		h = 8
+		if getMachineSetting('machine_type') == 'ultimaker2go':
+			w2 = 25
+		ret.append(numpy.array([[-size[0]/2,-size[1]/2],[-size[0]/2+w+2,-size[1]/2], [-size[0]/2+w,-size[1]/2+h], [-size[0]/2,-size[1]/2+h]], numpy.float32))
+		ret.append(numpy.array([[ size[0]/2-w2-2,-size[1]/2],[ size[0]/2,-size[1]/2], [ size[0]/2,-size[1]/2+h],[ size[0]/2-w2,-size[1]/2+h]], numpy.float32))
+		ret.append(numpy.array([[-size[0]/2+w+2, size[1]/2],[-size[0]/2, size[1]/2], [-size[0]/2, size[1]/2-h],[-size[0]/2+w, size[1]/2-h]], numpy.float32))
+		ret.append(numpy.array([[ size[0]/2, size[1]/2],[ size[0]/2-w2-2, size[1]/2], [ size[0]/2-w2, size[1]/2-h],[ size[0]/2, size[1]/2-h]], numpy.float32))
+	return ret
 
 #returns the number of extruders minimal used. Normally this returns 1, but with dual-extrusion support material it returns 2
 def minimalExtruderCount():
-    if int(getMachineSetting('extruder_amount')) < 2:
-        return 1
-    if getProfileSetting('support') == 'None':
-        return 1
-    if getProfileSetting('support_dual_extrusion') == 'Second extruder' or getProfileSetting('support_dual_extrusion') == 'First extruder':
-        return 2
-    if getPreference('simpleModeExtruder') == '2_Right Extruder':
-        return 2
-    return 1
+	if int(getMachineSetting('extruder_amount')) < 2:
+		return 1
+	if getProfileSetting('support') == 'None':
+		return 1
+	if getProfileSetting('support_dual_extrusion') == 'Second extruder':
+		return 2
+	return 1
 
 def getGCodeExtension():
-    if getMachineSetting('gcode_flavor') == 'BFB':
-        return '.bfb'
-    if getMachineSetting('gcode_flavor') == 'Mach3/LinuxCNC':
-        return '.ngc'
-    return '.gcode'
+	if getMachineSetting('gcode_flavor') == 'BFB':
+		return '.bfb'
+	if getMachineSetting('gcode_flavor') == 'Mach3/LinuxCNC':
+		return '.ngc'
+	return '.gcode'
 
 #########################################################
 ## Alteration file functions
 #########################################################
 def replaceTagMatch(m):
-    pre = m.group(1)
-    tag = m.group(2)
-    if tag == 'time':
-        return pre + time.strftime('%H:%M:%S')
-    if tag == 'date':
-        return pre + time.strftime('%d-%m-%Y')
-    if tag == 'day':
-        return pre + ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][int(time.strftime('%w'))]
-    if tag == 'print_time':
-        return pre + '#P_TIME#'
-    if tag == 'filament_amount':
-        return pre + '#F_AMNT#'
-    if tag == 'filament_weight':
-        return pre + '#F_WGHT#'
-    if tag == 'filament_cost':
-        return pre + '#F_COST#'
-    if tag == 'profile_string':
-        return pre + 'CURA_PROFILE_STRING:%s' % (getProfileString())
-    if pre == 'F' and tag == 'max_z_speed':
-        f = getProfileSettingFloat('travel_speed') * 60
-    if pre == 'F' and tag in ['print_speed', 'retraction_speed', 'travel_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
-        f = getProfileSettingFloat(tag) * 60
-    elif isProfileSetting(tag):
-        f = getProfileSettingFloat(tag)
-    elif isPreference(tag):
-        f = getProfileSettingFloat(tag)
-    else:
-        return '%s?%s?' % (pre, tag)
-    if (f % 1) == 0:
-        return pre + str(int(f))
-    return pre + str(f)
+	pre = m.group(1)
+	tag = m.group(2)
+	if tag == 'time':
+		return pre + time.strftime('%H:%M:%S')
+	if tag == 'date':
+		return pre + time.strftime('%d-%m-%Y')
+	if tag == 'day':
+		return pre + ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][int(time.strftime('%w'))]
+	if tag == 'print_time':
+		return pre + '#P_TIME#'
+	if tag == 'filament_amount':
+		return pre + '#F_AMNT#'
+	if tag == 'filament_weight':
+		return pre + '#F_WGHT#'
+	if tag == 'filament_cost':
+		return pre + '#F_COST#'
+	if tag == 'profile_string':
+		return pre + 'CURA_PROFILE_STRING:%s' % (getProfileString())
+	if pre == 'F' and tag == 'max_z_speed':
+		f = getProfileSettingFloat('travel_speed') * 60
+	if pre == 'F' and tag in ['print_speed', 'retraction_speed', 'travel_speed', 'bottom_layer_speed', 'cool_min_feedrate']:
+		f = getProfileSettingFloat(tag) * 60
+	elif isProfileSetting(tag):
+		f = getProfileSettingFloat(tag)
+	elif isPreference(tag):
+		f = getProfileSettingFloat(tag)
+	else:
+		return '%s?%s?' % (pre, tag)
+	if (f % 1) == 0:
+		return pre + str(int(f))
+	return pre + str(f)
 
 ### Get aleration raw contents. (Used internally in Cura)
 def getAlterationFile(filename):
-    if filename in tempOverride:
-        return tempOverride[filename]
-    global settingsDictionary
-    if filename in settingsDictionary and settingsDictionary[filename].isAlteration():
-        return settingsDictionary[filename].getValue()
-    traceback.print_stack()
-    sys.stderr.write('Error: "%s" not found in alteration settings\n' % (filename))
-    return ''
+	if filename in tempOverride:
+		return tempOverride[filename]
+	global settingsDictionary
+	if filename in settingsDictionary and settingsDictionary[filename].isAlteration():
+		return settingsDictionary[filename].getValue()
+	traceback.print_stack()
+	sys.stderr.write('Error: "%s" not found in alteration settings\n' % (filename))
+	return ''
 
 def setAlterationFile(name, value):
-    #Check if we have a configuration file loaded, else load the default.
-    global settingsDictionary
-    if name in settingsDictionary and settingsDictionary[name].isAlteration():
-        settingsDictionary[name].setValue(value)
-    saveProfile(getDefaultProfilePath(), True)
+	#Check if we have a configuration file loaded, else load the default.
+	global settingsDictionary
+	if name in settingsDictionary and settingsDictionary[name].isAlteration():
+		settingsDictionary[name].setValue(value)
+	saveProfile(getDefaultProfilePath(), True)
 
 def isTagIn(tag, contents):
-    contents = re.sub(';[^\n]*\n', '', contents)
-    return tag in contents
+	contents = re.sub(';[^\n]*\n', '', contents)
+	return tag in contents
 
 ### Get the alteration file for output. (Used by Skeinforge)
-def getAlterationFileContents(filename, extruderCount):
-    prefix = ''
-    postfix = ''
-    alterationContents = getAlterationFile(filename)
-    if getMachineSetting('gcode_flavor') == 'UltiGCode':
-        if filename == 'end.gcode':
-            return 'M25 ;Stop reading from this point on.\n;CURA_PROFILE_STRING:%s\n' % (getProfileString())
-        return ''
-    if filename == 'start.gcode' and getPreference('startMode') == 'Normal':
-        gcode_parameter_key = 'S'
-        if getMachineSetting('gcode_flavor') == 'Mach3/LinuxCNC':
-            gcode_parameter_key = 'P'
-        if extruderCount > 1:
-            alterationContents = getAlterationFile("start%d.gcode" % (extruderCount))
-        #For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
-        #We also set our steps per E here, if configured.
-        eSteps = getMachineSettingFloat('steps_per_e')
-        if eSteps > 0:
-            prefix += 'M92 E%f\n' % (eSteps)
-        temp = getProfileSettingFloat('print_temperature')
-        bedTemp = 0
-        if getMachineSetting('has_heated_bed') == 'True':
-            bedTemp = getProfileSettingFloat('print_bed_temperature')
+def getAlterationFileContents(filename, extruderCount = 1):
+	prefix = ''
+	postfix = ''
+	alterationContents = getAlterationFile(filename)
+	if getMachineSetting('gcode_flavor') == 'UltiGCode':
+		if filename == 'end.gcode':
+			return 'M25 ;Stop reading from this point on.\n;CURA_PROFILE_STRING:%s\n' % (getProfileString())
+		if filename == 'start.gcode':
+			if getPreference('startMode') == 'Simple' and getPreference('simpleModeMaterial') != '':
+				return ';MTYPE:%s\n' % (getPreference('simpleModeMaterial'))
+		return ''
+	if filename == 'start.gcode':
+		gcode_parameter_key = 'S'
+		if getMachineSetting('gcode_flavor') == 'Mach3/LinuxCNC':
+			gcode_parameter_key = 'P'
+		if extruderCount > 1:
+			alterationContents = getAlterationFile("start%d.gcode" % (extruderCount))
+		#For the start code, hack the temperature and the steps per E value into it. So the temperature is reached before the start code extrusion.
+		#We also set our steps per E here, if configured.
+		eSteps = getMachineSettingFloat('steps_per_e')
+		if eSteps > 0:
+			prefix += 'M92 E%f\n' % (eSteps)
+		temp = getProfileSettingFloat('print_temperature')
+		bedTemp = 0
+		if getMachineSetting('has_heated_bed') == 'True':
+			bedTemp = getProfileSettingFloat('print_bed_temperature')
 
-        if bedTemp > 0 and not isTagIn('{print_bed_temperature}', alterationContents):
-            prefix += 'M140 %s%f\n' % (gcode_parameter_key, bedTemp)
-        if temp > 0 and not isTagIn('{print_temperature}', alterationContents):
-            if extruderCount > 1:
-                for n in xrange(1, extruderCount):
-                    t = temp
-                    if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
-                        t = getProfileSettingFloat('print_temperature%d' % (n+1))
-                    prefix += 'M104 T%d %s%f\n' % (n, gcode_parameter_key, t)
-                for n in xrange(0, 1):
-                    t = temp
-                    if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
-                        t = getProfileSettingFloat('print_temperature%d' % (n+1))
-                    prefix += 'M109 T%d %s%f\n' % (n, gcode_parameter_key, t)
-                prefix += 'M190 %s%f\n' % (gcode_parameter_key, bedTemp)
-                prefix += 'T0\n'
-            else:
-                prefix += 'M109 %s%f\n' % (gcode_parameter_key, temp)
-                prefix += 'M190 %s%f\n' % (gcode_parameter_key, bedTemp)
-    elif filename == 'end.gcode' and getPreference('startMode') == 'Normal':
-        if extruderCount > 1:
-            alterationContents = getAlterationFile("end%d.gcode" % (extruderCount))
-        #Append the profile string to the end of the GCode, so we can load it from the GCode file later.
-        #postfix = ';CURA_PROFILE_STRING:%s\n' % (getProfileString())
-    return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
+		if bedTemp > 0 and not isTagIn('{print_bed_temperature}', alterationContents):
+			prefix += 'M140 %s%f\n' % (gcode_parameter_key, bedTemp)
+		if temp > 0 and not isTagIn('{print_temperature}', alterationContents):
+			if extruderCount > 1:
+				for n in xrange(1, extruderCount):
+					t = temp
+					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
+						t = getProfileSettingFloat('print_temperature%d' % (n+1))
+					prefix += 'M104 T%d %s%f\n' % (n, gcode_parameter_key, t)
+				for n in xrange(0, extruderCount):
+					t = temp
+					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
+						t = getProfileSettingFloat('print_temperature%d' % (n+1))
+					prefix += 'M109 T%d %s%f\n' % (n, gcode_parameter_key, t)
+				prefix += 'T0\n'
+			else:
+				prefix += 'M109 %s%f\n' % (gcode_parameter_key, temp)
+	elif filename == 'end.gcode':
+		if extruderCount > 1:
+			alterationContents = getAlterationFile("end%d.gcode" % (extruderCount))
+		#Append the profile string to the end of the GCode, so we can load it from the GCode file later.
+		#postfix = ';CURA_PROFILE_STRING:%s\n' % (getProfileString())
+	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'

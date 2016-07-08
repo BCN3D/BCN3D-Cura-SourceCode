@@ -10,6 +10,7 @@ import sys
 import time
 import serial
 import subprocess
+import glob
 
 import wx
 import wx.wizard
@@ -24,9 +25,10 @@ from Cura.avr_isp import intelHex
 
 from Cura.gui.util import taskbar
 from Cura.util import machineCom
-from Cura.util import machineFirmCom
 from Cura.util import profile
+from Cura.util import version
 from Cura.util import resources
+from Cura.gui import app
 from Tkinter import *
 
 
@@ -118,6 +120,7 @@ class InfoBox(wx.Panel):
     def SetAttentionIndicator(self):
         self.busyState = None
         self.bitmap.SetBitmap(self.attentionBitmap)
+
 
 class InfoPage(wx.wizard.WizardPageSimple):
     def __init__(self, parent, title):
@@ -239,9 +242,9 @@ class InfoPage(wx.wizard.WizardPageSimple):
 class MachineSelectPage(InfoPage):
     def __init__(self, parent):
         super(MachineSelectPage, self).__init__(parent, _("Automatic Firmware Updater"))
-        self.AddText(_("Check updates for which machine:"))
+        self.AddText(_("Check updates for which machine:\n"))
 
-        BCN3DSigmaRadio = self.AddRadioButton("BCN3D " + u"\u03A3", style=wx.RB_GROUP)
+        BCN3DSigmaRadio = self.AddRadioButton("BCN3D Sigma")
         BCN3DSigmaRadio.Bind(wx.EVT_RADIOBUTTON, self.OnBCN3DSigmaSelect)
         if profile.getMachineSetting('machine_type') == 'BCN3DSigma':
             BCN3DSigmaRadio.SetValue(True)
@@ -254,592 +257,309 @@ class MachineSelectPage(InfoPage):
         if profile.getMachineSetting('machine_type') == 'BCN3DR':
             BCN3DRRadio.SetValue(True)
 
-    def OnBCN3DSigmaSelect(self,e):
+
+
+
+    def OnBCN3DSigmaSelect(self, e):
         wx.wizard.WizardPageSimple.Chain(self, self.GetParent().decidetoupdatesigma)
 
-    def OnBCN3DPlusSelect(self,e):
+    def OnBCN3DPlusSelect(self, e):
         wx.wizard.WizardPageSimple.Chain(self, self.GetParent().decidetoupdateplus)
 
-    def OnBCN3DRSelect(self,e):
+    def OnBCN3DRSelect(self, e):
         wx.wizard.WizardPageSimple.Chain(self, self.GetParent().decidetoupdater)
 
     def AllowBack(self):
         return False
 
-class decideToUpdateSigma(InfoPage):
-    def __init__(self, parent):
-        super(decideToUpdateSigma, self).__init__(parent, _('Upgrade BCN3D ' + u"\u03A3" + ' Firmware'))
-        self.AddText(_('Are you sure you want to upgrade your firmware to the \nnewest available version?'))
-        self.AddSeperator()
-        upgradeButton = self.AddButton('Upgrade Firmware')
-        upgradeButton.Bind(wx.EVT_BUTTON, self.OnFirstConnect)
-
-    def AllowNext(self):
-        return False
-
-    def AllowBack(self):
-        return True
-
-    def OnFirstConnect(self, e):
-        self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
-        self.GetParent().ShowPage(self.GetNext())
-
-class FirstConnectPrinterSigma(InfoPage):
-    def __init__(self, parent):
-        super(FirstConnectPrinterSigma,self).__init__(parent, _("Printer connection"))
-        self.AddText(_('Please connect your printer to the computer. \nOnce you see "Connected" you may proceed to the next step.'))
-        self.checkBitmap = wx.Bitmap(resources.getPathForImage('checkmark.png'))
-        self.crossBitmap = wx.Bitmap(resources.getPathForImage('cross.png'))
-        self.unknownBitmap = wx.Bitmap(resources.getPathForImage('question.png'))
-
-        connectPritner = self.AddButton(_("Connect printer"))
-        connectPritner.Bind(wx.EVT_BUTTON, self.OnCheckClick)
-        connectPritner.Enable(True)
-        self.AddSeperator()
-        self.commState = self.AddCheckmark(_("Communication:"), self.unknownBitmap)
-        self.unknownBitmap = wx.Bitmap(resources.getPathForImage('question.png'))
-        self.infoBox = self.AddInfoBox()
-        self.machineState = self.AddText("")
-        self.errorLogButton = self.AddButton(_("Show error log"))
-        self.errorLogButton.Show(False)
-        self.comm = None
-        self.Bind(wx.EVT_BUTTON, self.OnErrorLog, self.errorLogButton)
-        self.AddSeperator()
-        self.AddText(_('Press on the following button to know your current \nfirmware version and check whether there are new releases. \nThis might take a few seconds.'))
-        getFirstLine = self.AddButton(_("Get firmware version"))
-        getFirstLine.Bind(wx.EVT_BUTTON, self.OnGetFirstLine)
-        self.AddSeperator()
-        self.AddText(_('Sometimes when releasing new firmware updates, it is \nnecessary to update the files of the LCD Display in order \nto get new functionalities and menus.'))
-        openSDFiles = self.AddButton(_("Open SD Files"))
-        openSDFiles.Bind(wx.EVT_BUTTON, self.OnOpenSDFiles)
-        howToOpen = self.AddButton(_("How to Update SD Files"))
-        howToOpen.Bind(wx.EVT_BUTTON, self.OnHowToOpen)
-        self.AddSeperator()
-
-
-
-    def __del__(self):
-        if self.comm is not None:
-            self.comm.close()
-
-    def AllowNext(self):
-        return False
-
-    def OnCheckClick(self, e=None):
-        self.errorLogButton.Show(False)
-        if self.comm is not None:
-            self.comm.close()
-            del self.comm
-            self.comm = None
-            wx.CallAfter(self.OnCheckClick)
-            return
-        self.infoBox.SetBusy(_("Connecting to machine."))
-        self.commState.SetBitmap(self.unknownBitmap)
-        self.comm = machineCom.MachineCom(callbackObject=self)
-        self.checkupState = 0
-
-    def OnErrorLog(self, e):
-        printWindow.LogWindow('\n'.join(self.comm.getLog()))
-
-    def mcLog(self, message):
-        pass
-
-    def mcStateChange(self, state):
-        if self.comm is None:
-            return
-        if self.comm.isOperational():
-            wx.CallAfter(self.commState.SetBitmap, self.checkBitmap)
-            wx.CallAfter(self.machineState.SetLabel, _("%s") % (self.comm.getStateString()))
-            wx.CallAfter(self.infoBox.SetReadyIndicator)
-        elif self.comm.isError():
-            wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-            wx.CallAfter(self.infoBox.SetError, _("Failed to establish connection with the printer."), 'https://github.com/BCN3D/BCN3D-Cura-Windows/issues')
-            wx.CallAfter(self.machineState.SetLabel, '%s' % (self.comm.getErrorString()))
-            wx.CallAfter(self.errorLogButton.Show, True)
-            wx.CallAfter(self.Layout)
-        elif self.comm.isClosed():
-            wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-            wx.CallAfter(self.machineState.SetLabel, _("Failed to establish connection with the printer."))
-            wx.CallAfter(self.infoBox.SetErrorIndicator)
-        else:
-            wx.CallAfter(self.machineState.SetLabel, _("Communication State: %s") % (self.comm.getStateString()))
-
-    def mcMessage(self, message):
-        if self.checkupState >= 3 and self.checkupState < 10 and ('_min' in message or '_max' in message):
-            for data in message.split(' '):
-                if ':' in data:
-                    tag, value = data.split(':', 1)
-                    if tag == 'x_min':
-                        self.xMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'x_max':
-                        self.xMaxStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'y_min':
-                        self.yMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'y_max':
-                        self.yMaxStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'z_min':
-                        self.zMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'z_max':
-                        self.zMaxStop = (value == 'H' or value == 'TRIGGERED')
-            if ':' in message:
-                tag, value = map(str.strip, message.split(':', 1))
-                if tag == 'x_min':
-                    self.xMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'x_max':
-                    self.xMaxStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'y_min':
-                    self.yMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'y_max':
-                    self.yMaxStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'z_min':
-                    self.zMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'z_max':
-                    self.zMaxStop = (value == 'H' or value == 'TRIGGERED')
-            if 'z_max' in message:
-                self.comm.sendCommand('M119')
-
-            if self.checkupState == 3:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 5
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the left X endstop."))
-                    else:
-                        self.checkupState = 4
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the right X endstop."))
-            elif self.checkupState == 4:
-                if not self.xMinStop and self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 5
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the left X endstop."))
-            elif self.checkupState == 5:
-                if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 6
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the front Y endstop."))
-            elif self.checkupState == 6:
-                if not self.xMinStop and not self.xMaxStop and self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 8
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the top Z endstop."))
-                    else:
-                        self.checkupState = 7
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the back Y endstop."))
-            elif self.checkupState == 7:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 8
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the top Z endstop."))
-            elif self.checkupState == 8:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 10
-                        self.comm.close()
-                        wx.CallAfter(self.infoBox.SetInfo, _("Checkup finished"))
-                        wx.CallAfter(self.infoBox.SetReadyIndicator)
-                    else:
-                        self.checkupState = 9
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the bottom Z endstop."))
-            elif self.checkupState == 9:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and self.zMaxStop:
-                    self.checkupState = 10
-                    self.comm.close()
-                    wx.CallAfter(self.infoBox.SetInfo, _("Checkup finished"))
-                    wx.CallAfter(self.infoBox.SetReadyIndicator)
-
-    def mcProgress(self, lineNr):
-        pass
-
-    def mcZChange(self, newZ):
-        pass
-
-    def OnGetFirstLine(self, e = None):
-        if self.comm.isOperational():
-            self.comm.readFirstLine()
-            self.comm.getFirmwareHardware()
-
-    def OnOpenSDFiles(self, e):
-        home = os.path.expanduser('~')
-        os.startfile(home + '\Documents\BCN3DSigma')
-
-    def OnHowToOpen(self, e):
-        webbrowser.open('https://github.com/BCN3D/BCN3D-Cura-Windows/wiki/Updating-the-SD-Files-from-the-LCD-Display')
-
-
-#### Updater for BCN3D Plus #####
 class decideToUpdatePlus(InfoPage):
     def __init__(self, parent):
-        super(decideToUpdatePlus, self).__init__(parent, _('Upgrade BCN3D + Firmware'))
-        self.AddText(_('Are you sure you want to upgrade your firmware to the \nnewest available version?'))
-        self.AddSeperator()
-        upgradeButton = self.AddButton('Upgrade Firmware')
-        upgradeButton.Bind(wx.EVT_BUTTON, self.OnFirstConnect)
+        super(decideToUpdatePlus, self).__init__(parent, _('Upgrade BCN3D Plus Firmware'))
 
-    def AllowNext(self):
-        return False
+        self.AddText(_('I am sorry, but Cura does not process firmware updates\n'
+                       'for your machine.'))
 
-    def AllowBack(self):
-        return True
-
-    def OnFirstConnect(self, e):
-        self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
-        self.GetParent().ShowPage(self.GetNext())
-
-class FirstConnectPrinterPlus(InfoPage):
-    def __init__(self, parent):
-        super(FirstConnectPrinterPlus,self).__init__(parent, _("Printer connection"))
-        self.AddText(_('Please connect your printer to the computer. \nOnce you see "Connected" you may proceed to the next step.'))
-        self.checkBitmap = wx.Bitmap(resources.getPathForImage('checkmark.png'))
-        self.crossBitmap = wx.Bitmap(resources.getPathForImage('cross.png'))
-        self.unknownBitmap = wx.Bitmap(resources.getPathForImage('question.png'))
-
-        connectPritner = self.AddButton(_("Connect printer"))
-        connectPritner.Bind(wx.EVT_BUTTON, self.OnCheckClick)
-        connectPritner.Enable(True)
-        self.AddSeperator()
-        self.commState = self.AddCheckmark(_("Communication:"), self.unknownBitmap)
-        self.unknownBitmap = wx.Bitmap(resources.getPathForImage('question.png'))
-        self.infoBox = self.AddInfoBox()
-        self.machineState = self.AddText("")
-        self.errorLogButton = self.AddButton(_("Show error log"))
-        self.errorLogButton.Show(False)
-        self.comm = None
-        self.Bind(wx.EVT_BUTTON, self.OnErrorLog, self.errorLogButton)
-        self.AddSeperator()
-        self.AddText(_('Press on the following button to know your current \nfirmware version and check whether there are new releases. \nThis might take a few seconds.'))
-        getFirstLine = self.AddButton(_("Get firmware version"))
-        getFirstLine.Bind(wx.EVT_BUTTON, self.OnGetFirstLine)
-        self.AddSeperator()
-
-
-    def __del__(self):
-        if self.comm is not None:
-            self.comm.close()
-
-    def AllowNext(self):
-        return True
-
-
-    def OnCheckClick(self, e=None):
-        self.errorLogButton.Show(False)
-        if self.comm is not None:
-            self.comm.close()
-            del self.comm
-            self.comm = None
-            wx.CallAfter(self.OnCheckClick)
-            return
-        self.infoBox.SetBusy(_("Connecting to machine."))
-        self.commState.SetBitmap(self.unknownBitmap)
-        self.comm = machineCom.MachineCom(callbackObject=self)
-        self.checkupState = 0
-
-    def OnErrorLog(self, e):
-        printWindow.LogWindow('\n'.join(self.comm.getLog()))
-
-    def mcLog(self, message):
-        pass
-
-    def mcStateChange(self, state):
-        if self.comm is None:
-            return
-        if self.comm.isOperational():
-            wx.CallAfter(self.commState.SetBitmap, self.checkBitmap)
-            wx.CallAfter(self.machineState.SetLabel, _("%s") % (self.comm.getStateString()))
-            wx.CallAfter(self.infoBox.SetReadyIndicator)
-        elif self.comm.isError():
-            wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-            wx.CallAfter(self.infoBox.SetError, _("Failed to establish connection with the printer."), 'http://wiki.ultimaker.com/Cura:_Connection_problems')
-            wx.CallAfter(self.machineState.SetLabel, '%s' % (self.comm.getErrorString()))
-            wx.CallAfter(self.errorLogButton.Show, True)
-            wx.CallAfter(self.Layout)
-        elif self.comm.isClosed():
-            wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-            wx.CallAfter(self.machineState.SetLabel, _("Failed to establish connection with the printer."))
-            wx.CallAfter(self.infoBox.SetErrorIndicator)
-        else:
-            wx.CallAfter(self.machineState.SetLabel, _("Communication State: %s") % (self.comm.getStateString()))
-
-    def mcMessage(self, message):
-        if self.checkupState >= 3 and self.checkupState < 10 and ('_min' in message or '_max' in message):
-            for data in message.split(' '):
-                if ':' in data:
-                    tag, value = data.split(':', 1)
-                    if tag == 'x_min':
-                        self.xMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'x_max':
-                        self.xMaxStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'y_min':
-                        self.yMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'y_max':
-                        self.yMaxStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'z_min':
-                        self.zMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'z_max':
-                        self.zMaxStop = (value == 'H' or value == 'TRIGGERED')
-            if ':' in message:
-                tag, value = map(str.strip, message.split(':', 1))
-                if tag == 'x_min':
-                    self.xMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'x_max':
-                    self.xMaxStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'y_min':
-                    self.yMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'y_max':
-                    self.yMaxStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'z_min':
-                    self.zMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'z_max':
-                    self.zMaxStop = (value == 'H' or value == 'TRIGGERED')
-            if 'z_max' in message:
-                self.comm.sendCommand('M119')
-
-            if self.checkupState == 3:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 5
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the left X endstop."))
-                    else:
-                        self.checkupState = 4
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the right X endstop."))
-            elif self.checkupState == 4:
-                if not self.xMinStop and self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 5
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the left X endstop."))
-            elif self.checkupState == 5:
-                if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 6
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the front Y endstop."))
-            elif self.checkupState == 6:
-                if not self.xMinStop and not self.xMaxStop and self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 8
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the top Z endstop."))
-                    else:
-                        self.checkupState = 7
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the back Y endstop."))
-            elif self.checkupState == 7:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 8
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the top Z endstop."))
-            elif self.checkupState == 8:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 10
-                        self.comm.close()
-                        wx.CallAfter(self.infoBox.SetInfo, _("Checkup finished"))
-                        wx.CallAfter(self.infoBox.SetReadyIndicator)
-                    else:
-                        self.checkupState = 9
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the bottom Z endstop."))
-            elif self.checkupState == 9:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and self.zMaxStop:
-                    self.checkupState = 10
-                    self.comm.close()
-                    wx.CallAfter(self.infoBox.SetInfo, _("Checkup finished"))
-                    wx.CallAfter(self.infoBox.SetReadyIndicator)
-
-    def mcProgress(self, lineNr):
-        pass
-
-    def mcZChange(self, newZ):
-        pass
-
-    def OnGetFirstLine(self, e = None):
-        if self.comm.isOperational():
-            self.comm.readFirstLine()
-            self.comm.getFirmwareHardware()
-
-
-##### Updater for BCN3D R ######
 class decideToUpdateR(InfoPage):
     def __init__(self, parent):
         super(decideToUpdateR, self).__init__(parent, _('Upgrade BCN3D R Firmware'))
-        self.AddText(_('Are you sure you want to upgrade your firmware to the \nnewest available version?'))
-        self.AddSeperator()
-        upgradeButton = self.AddButton('Upgrade Firmware')
-        upgradeButton.Bind(wx.EVT_BUTTON, self.OnFirstConnect)
 
-    def AllowNext(self):
-        return False
+        self.AddText(_('I am sorry, but Cura does not process firmware updates\n'
+                       'for your machine.'))
+
+class decideToUpdateSigma(InfoPage):
+    def __init__(self, parent):
+        super(decideToUpdateSigma, self).__init__(parent, _('Firmware Updater'))
+
+        self._port = 'AUTO'
+        self._baudrate = 250000
+
+        if self._port == 'AUTO':
+            print 'entramos en port auto despues de baudrate'
+            programmer = stk500v2.Stk500v2()
+            print 'antes',self._port
+            if not programmer.isConnected():
+                print 'not connected'
+                for self._port in machineCom.serialList(False):
+                    try:
+                        print 'despues',self._port
+                        programmer.connect(self._port)
+                        print 'lo que devuelve', programmer.isConnected()
+                        print self._baudrate
+                        profile.putMachineSetting('serial_port_auto', self._port)
+                        print 'hemos llegado despues del port'
+                        print self._port
+                        #wx.MessageBox('esto es lo que tenemoss',self._port)
+                        programmer.close()
+                        self._serial = serial.Serial(str(self._port), self._baudrate, timeout=1)
+                        print self._serial
+                        profile.putMachineSetting('self_serial', self._serial)
+                        self._state = 'Online'
+                        print 'bueno', self._state
+                        break
+                    except ispBase.IspError as (e):
+                        self._state = 'Offline'
+                        pass
+                    programmer.close()
+                if self._port not in machineCom.serialList(False):
+                    self._state = 'Offline'
+                    print 'malo',self._state
+
+
+        if self._state == 'Offline':
+            self.AddText(_('Please connect your printer to the computer.\n\n'
+                           'In case you already had it connected and it was not detected,\n'
+                           'please disconnect and connect again.\n\n'
+                           'Once you have done this, you may press Connect && Upgrade to\n'
+                           'continue with the process.\n\n'
+                           '(Note: this may take a minute)\n'))
+            connectButton = self.AddButton('Connect && Upgrade')
+            connectButton.Bind(wx.EVT_BUTTON, self.OnWantToConnect)
+            self.AddSeperator()
+        if self._state == 'Online':
+            self.AddText(_('We have detected a printer, please press Upgrade to continue\n'
+                           'with the process.\n\n'
+                           '(Note: this may take a minute)\n'))
+            upgradeButton = self.AddButton('Upgrade')
+            upgradeButton.Bind(wx.EVT_BUTTON, self.OnWantToUpgrade)
+            self.AddSeperator()
+
+    def OnWantToConnect(self,e):
+        self._port = 'AUTO'
+        self._baudrate = 250000
+
+        if self._port == 'AUTO':
+            print 'entramos en port auto despues de baudrate'
+            programmer = stk500v2.Stk500v2()
+            print 'antes', self._port
+            if not programmer.isConnected():
+                print 'not connected'
+                for self._port in machineCom.serialList(False):
+                    try:
+                        print 'despues', self._port
+                        programmer.connect(self._port)
+                        print 'lo que devuelve', programmer.isConnected()
+                        print self._baudrate
+                        profile.putMachineSetting('serial_port_auto', self._port)
+                        print 'hemos llegado despues del port'
+                        print self._port
+                        programmer.close()
+                        self._serial = serial.Serial(str(self._port), self._baudrate, timeout=1)
+                        print self._serial
+                        profile.putMachineSetting('self_serial', self._serial)
+                        self._state = 'Online'
+                        print 'bueno', self._state
+                        break
+                    except ispBase.IspError as (e):
+                        self._state = 'Offline'
+                        pass
+                    programmer.close()
+                if self._port not in machineCom.serialList(False):
+                    self._state = 'Offline'
+                    print 'malo', self._state
+
+        if self._state == 'Online':
+            self._serial.close()
+            self.readFirstLine()
+            self.getFirmwareHardware()
+
+    def OnWantToUpgrade(self,e):
+        self._serial.close()
+        self.readFirstLine()
+        self.getFirmwareHardware()
+
+    def readFirstLine(self):
+            port = profile.getMachineSetting('serial_port_auto')
+            ser = serial.Serial(
+                port=str(port),
+                baudrate=250000,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=2)
+
+            print ser
+            print("connected to: " + ser.portstr)
+
+            ret = ''
+            while ret == '':
+                ret = ser.read(8)
+                print 'devolvemos esto', ret
+
+
+            self._version = ret
+
+            print self._version
+
+            ser.close()
+
+    def getFirmwareHardware(self):
+        ver = self._version
+
+        if profile.getMachineSetting('machine_type') != 'BCN3DSigma' and profile.getMachineSetting(
+                'machine_type') != 'BCN3DPlus' and profile.getMachineSetting('machine_type') != 'BCN3DR':
+            wx.MessageBox(_("I am sorry, but Cura does not process firmware updates for your machine configuration."),
+                          _("Firmware update"), wx.OK | wx.ICON_ERROR)
+            return
+        elif profile.getMachineSetting('machine_type') == 'BCN3DSigma' or profile.getMachineSetting(
+                'machine_type') == 'BCN3DPlus' or profile.getMachineSetting('machine_type') == 'BCN3DR':
+            myVersion = version.getLatestFHVersion(ver)
+
+
+            if myVersion == None:
+                return
+
+            if version.downloadLatestFHVersion != None:
+                org = os.getcwd()
+                if sys.platform.startswith('win'):
+                    self._dir = os.getcwd() + '\Compiled Firmware'
+                    os.chdir(self._dir)
+                elif sys.platform.startswith('darwin'):
+                    self._dir = os.getcwd() + '/Compiled Firmware/'
+                    os.chdir(self._dir)
+
+                for filename in os.listdir(self._dir):
+                    if filename.endswith(".hex"):
+                        machineCom.InstallFirmware(self, filename)
+
+                check = filter(lambda x: x.isdigit(), myVersion)
+                print 'deberian ser solo digitos ', check
+                goodOne = check[-3:]
+                print 'good one ', goodOne
+
+
+                for filename in os.listdir(org):
+                    if filename.startswith("SD"):
+                        print 'esto es el two ', filename
+                        check2 = filter(lambda x: x.isdigit(), filename)
+                        self._goodTwo = check2[-3:]
+                        print 'esto es el two con solo numeros ', self._goodTwo
+
+                if goodOne == self._goodTwo:
+                    print 'hemos entrado porque tenemos que actualizar ficheros'
+                    choice = wx.MessageBox(_("You need to update the files on your printers SD Card\n"
+                                             "Press 'OK' to learn how to do it."), _("SD Files Updater"), wx.OK)
+                    if choice == wx.OK:
+                        os.chdir(org)
+                        self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
+                        self.GetParent().ShowPage(self.GetNext())
+
+                elif goodOne != self._goodTwo:
+                    print 'ya hemos acabado, no tenemos que actualizar nada para la SD'
+
+
+                    wx.MessageBox(_("You are done!\n\nEnjoy the new version."), _("Firmware updater"), wx.OK | wx.ICON_INFORMATION)
+                    #if thing == wx.OK:
+                        #self.Bind(wx.wizard.EVT_WIZARD_FINISHED, thing)
+                    #self.Destroy()
+                    print 'done'
+
 
     def AllowBack(self):
         return True
 
-    def OnFirstConnect(self, e):
-        self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
-        self.GetParent().ShowPage(self.GetNext())
+    def AllowNext(self):
+        return False
 
-class FirstConnectPrinterR(InfoPage):
+######## SD Wizard ###########
+class disconnectPrinter(InfoPage):
     def __init__(self, parent):
-        super(FirstConnectPrinterR,self).__init__(parent, _("Printer connection"))
-        self.AddText(_('Please connect your printer to the computer. \nOnce you see "Connected" you may proceed to the next step.'))
-        self.checkBitmap = wx.Bitmap(resources.getPathForImage('checkmark.png'))
-        self.crossBitmap = wx.Bitmap(resources.getPathForImage('cross.png'))
-        self.unknownBitmap = wx.Bitmap(resources.getPathForImage('question.png'))
-
-        connectPritner = self.AddButton(_("Connect printer"))
-        connectPritner.Bind(wx.EVT_BUTTON, self.OnCheckClick)
-        connectPritner.Enable(True)
-        self.AddSeperator()
-        self.commState = self.AddCheckmark(_("Communication:"), self.unknownBitmap)
-        self.unknownBitmap = wx.Bitmap(resources.getPathForImage('question.png'))
-        self.infoBox = self.AddInfoBox()
-        self.machineState = self.AddText("")
-        self.errorLogButton = self.AddButton(_("Show error log"))
-        self.errorLogButton.Show(False)
-        self.comm = None
-        self.Bind(wx.EVT_BUTTON, self.OnErrorLog, self.errorLogButton)
-        self.AddSeperator()
-        self.AddText(_('Press on the following button to know your current \nfirmware version and check whether there are new releases. \nThis might take a few seconds.'))
-        getFirstLine = self.AddButton(_("Get firmware version"))
-        getFirstLine.Bind(wx.EVT_BUTTON, self.OnGetFirstLine)
-        self.AddSeperator()
+        super(disconnectPrinter, self).__init__(parent, _('SD Update Wizard'))
 
 
-    def __del__(self):
-        if self.comm is not None:
-            self.comm.close()
+
+        self.AddText(_('Please turn off your printer and disconnect the USB\n'
+                       'cable from the computer.'))
 
     def AllowNext(self):
         return True
 
-    def OnCheckClick(self, e=None):
-        self.errorLogButton.Show(False)
-        if self.comm is not None:
-            self.comm.close()
-            del self.comm
-            self.comm = None
-            wx.CallAfter(self.OnCheckClick)
-            return
-        self.infoBox.SetBusy(_("Connecting to machine."))
-        self.commState.SetBitmap(self.unknownBitmap)
-        self.comm = machineCom.MachineCom(callbackObject=self)
-        self.checkupState = 0
+class undoCover(InfoPage):
+    def __init__(self, parent):
+        super(undoCover, self).__init__(parent, _('SD Update Wizard'))
 
-    def OnErrorLog(self, e):
-        printWindow.LogWindow('\n'.join(self.comm.getLog()))
+        self.AddText(_('First of all undo the screw holding the LCD Cover.'))
 
-    def mcLog(self, message):
-        pass
+        self.firstBit = wx.Bitmap(resources.getPathForImage('cover1.png'))
+        self.AddBitmap(self.firstBit)
 
-    def mcStateChange(self, state):
-        if self.comm is None:
-            return
-        if self.comm.isOperational():
-            wx.CallAfter(self.commState.SetBitmap, self.checkBitmap)
-            wx.CallAfter(self.machineState.SetLabel, _("%s") % (self.comm.getStateString()))
-            wx.CallAfter(self.infoBox.SetReadyIndicator)
-        elif self.comm.isError():
-            wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-            wx.CallAfter(self.infoBox.SetError, _("Failed to establish connection with the printer."), 'http://wiki.ultimaker.com/Cura:_Connection_problems')
-            wx.CallAfter(self.machineState.SetLabel, '%s' % (self.comm.getErrorString()))
-            wx.CallAfter(self.errorLogButton.Show, True)
-            wx.CallAfter(self.Layout)
-        elif self.comm.isClosed():
-            wx.CallAfter(self.commState.SetBitmap, self.crossBitmap)
-            wx.CallAfter(self.machineState.SetLabel, _("Failed to establish connection with the printer."))
-            wx.CallAfter(self.infoBox.SetErrorIndicator)
-        else:
-            wx.CallAfter(self.machineState.SetLabel, _("Communication State: %s") % (self.comm.getStateString()))
+    def AllowNext(self):
+        return True
 
-    def mcMessage(self, message):
-        if self.checkupState >= 3 and self.checkupState < 10 and ('_min' in message or '_max' in message):
-            for data in message.split(' '):
-                if ':' in data:
-                    tag, value = data.split(':', 1)
-                    if tag == 'x_min':
-                        self.xMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'x_max':
-                        self.xMaxStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'y_min':
-                        self.yMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'y_max':
-                        self.yMaxStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'z_min':
-                        self.zMinStop = (value == 'H' or value == 'TRIGGERED')
-                    if tag == 'z_max':
-                        self.zMaxStop = (value == 'H' or value == 'TRIGGERED')
-            if ':' in message:
-                tag, value = map(str.strip, message.split(':', 1))
-                if tag == 'x_min':
-                    self.xMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'x_max':
-                    self.xMaxStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'y_min':
-                    self.yMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'y_max':
-                    self.yMaxStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'z_min':
-                    self.zMinStop = (value == 'H' or value == 'TRIGGERED')
-                if tag == 'z_max':
-                    self.zMaxStop = (value == 'H' or value == 'TRIGGERED')
-            if 'z_max' in message:
-                self.comm.sendCommand('M119')
+class removeSDCard(InfoPage):
+    def __init__(self, parent):
+        super(removeSDCard, self).__init__(parent, _('SD Update Wizard'))
 
-            if self.checkupState == 3:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 5
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the left X endstop."))
-                    else:
-                        self.checkupState = 4
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the right X endstop."))
-            elif self.checkupState == 4:
-                if not self.xMinStop and self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 5
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the left X endstop."))
-            elif self.checkupState == 5:
-                if self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 6
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the front Y endstop."))
-            elif self.checkupState == 6:
-                if not self.xMinStop and not self.xMaxStop and self.yMinStop and not self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 8
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the top Z endstop."))
-                    else:
-                        self.checkupState = 7
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the back Y endstop."))
-            elif self.checkupState == 7:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and self.yMaxStop and not self.zMinStop and not self.zMaxStop:
-                    self.checkupState = 8
-                    wx.CallAfter(self.infoBox.SetAttention, _("Please press the top Z endstop."))
-            elif self.checkupState == 8:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and self.zMinStop and not self.zMaxStop:
-                    if profile.getMachineSetting('machine_type') == 'ultimaker_plus':
-                        self.checkupState = 10
-                        self.comm.close()
-                        wx.CallAfter(self.infoBox.SetInfo, _("Checkup finished"))
-                        wx.CallAfter(self.infoBox.SetReadyIndicator)
-                    else:
-                        self.checkupState = 9
-                        wx.CallAfter(self.infoBox.SetAttention, _("Please press the bottom Z endstop."))
-            elif self.checkupState == 9:
-                if not self.xMinStop and not self.xMaxStop and not self.yMinStop and not self.yMaxStop and not self.zMinStop and self.zMaxStop:
-                    self.checkupState = 10
-                    self.comm.close()
-                    wx.CallAfter(self.infoBox.SetInfo, _("Checkup finished"))
-                    wx.CallAfter(self.infoBox.SetReadyIndicator)
+        self.AddText(_('Now take out the micro SD card. You just need to\n'
+                       'push it in and the SD card will come off. Be careful\n'
+                       'not to lose the SD card inside the printer.'))
 
-    def mcProgress(self, lineNr):
-        pass
-
-    def mcZChange(self, newZ):
-        pass
-
-    def OnGetFirstLine(self, e = None):
-        if self.comm.isOperational():
-            self.comm.readFirstLine()
-            self.comm.getFirmwareHardware()
+        self.secondBit = wx.Bitmap(resources.getPathForImage('cover2.png'))
+        self.AddBitmap(self.secondBit)
 
 
+    def AllowNext(self):
+        return True
+
+class addNewFiles(InfoPage):
+    def __init__(self, parent):
+        super(addNewFiles, self).__init__(parent, _('SD Update Wizard'))
+
+        self.AddText(_('Connect the SD card to your computer and substitute\n'
+                       'the old files for the new ones. We recommned that you\n'
+                       'delete all of the old files and copy the new ones.\n\n'
+                       'Press on the button below to find the new SD files\n'
+                       'you need.\n'))
+
+        fileButton = self.AddButton('SD Files')
+        fileButton.Bind(wx.EVT_BUTTON, self.onGetFiles)
+
+
+    def onGetFiles(self,e):
+        os.startfile(os.getcwd())
+        self.GetParent().FindWindowById(wx.ID_FORWARD).Enable()
+        self.GetParent().ShowPage(self.GetNext())
+
+    def AllowNext(self):
+        return True
+
+class youAreDone(InfoPage):
+    def __init__(self, parent):
+        super(youAreDone, self).__init__(parent, _('SD Update Wizard'))
+
+        self.AddText(_('You are done!\n\n'
+                       'Make sure you insert the SD card back in the LCD\n'
+                       'display and close the LCD Cover.\n\n'
+                       'Enjoy the new version!\n'))
+
+    def AllowNext(self):
+        return True
 
 #Where you edit the pages and how they work
 class ConfigFirmware(wx.wizard.Wizard):
-    def __init__(self, addNew = False):
+    def __init__(self):
         super(ConfigFirmware, self).__init__(None, -1, _("Machine Firmware Updater"))
 
-        self._old_machine_index = int(profile.getPreferenceFloat('active_machine'))
-        if addNew:
-            profile.setActiveMachine(profile.getMachineCount())
-
-        self.Bind(wx.wizard.EVT_WIZARD_CANCEL, self.OnCancel)
+        self.Bind(wx.wizard.EVT_WIZARD_FINISHED, self.OnCancel)
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
         self.Bind(wx.wizard.EVT_WIZARD_FINISHED, self.OnFinish)
@@ -847,23 +567,21 @@ class ConfigFirmware(wx.wizard.Wizard):
 
         self.machineSelectPage = MachineSelectPage(self)
         self.decidetoupdatesigma = decideToUpdateSigma(self)
-        self.firstconnectprintersigma = FirstConnectPrinterSigma(self)
         self.decidetoupdateplus = decideToUpdatePlus(self)
-        self.firstconnectprinterplus = FirstConnectPrinterPlus(self)
         self.decidetoupdater = decideToUpdateR(self)
-        self.firstconnectprinterr = FirstConnectPrinterR(self)
-
+        self.disconnectprinter = disconnectPrinter(self)
+        self.undocover = undoCover(self)
+        self.removesdcard = removeSDCard(self)
+        self.addnewfiles = addNewFiles(self)
+        self.youaredone = youAreDone(self)
 
         if profile.getMachineSetting('machine_type') == 'BCN3DSigma':
             wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.decidetoupdatesigma)
-            wx.wizard.WizardPageSimple.Chain(self.decidetoupdatesigma, self.firstconnectprintersigma)
-        if profile.getMachineSetting('machine_type') == 'BCN3DPlus':
-            wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.decidetoupdateplus)
-            wx.wizard.WizardPageSimple.Chain(self.decidetoupdateplus, self.firstconnectprinterplus)
-        if profile.getMachineSetting('machine_type') == 'BCN3DR':
-            wx.wizard.WizardPageSimple.Chain(self.machineSelectPage, self.decidetoupdater)
-            wx.wizard.WizardPageSimple.Chain(self.decidetoupdater, self.firstconnectprinterr)
-
+            wx.wizard.WizardPageSimple.Chain(self.decidetoupdatesigma, self.disconnectprinter)
+            wx.wizard.WizardPageSimple.Chain(self.disconnectprinter, self.undocover)
+            wx.wizard.WizardPageSimple.Chain(self.undocover, self.removesdcard)
+            wx.wizard.WizardPageSimple.Chain(self.removesdcard, self.addnewfiles)
+            wx.wizard.WizardPageSimple.Chain(self.addnewfiles, self.youaredone)
 
         self.FitToPage(self.machineSelectPage)
         self.GetPageAreaSizer().Add(self.machineSelectPage)
@@ -884,14 +602,10 @@ class ConfigFirmware(wx.wizard.Wizard):
         else:
             self.FindWindowById(wx.ID_BACKWARD).Disable()
 
-    def OnCancel():
-        wizard.Destroy()
-    
-    def OnFinish():
-        wizard.Destroy()
+    def OnCancel(self, e):
+        self.Destroy()
 
-
-
-
+    def OnFinish(self, e):
+        self.Destroy()
 
 

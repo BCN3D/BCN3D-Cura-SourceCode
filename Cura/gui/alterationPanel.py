@@ -8,13 +8,13 @@ from Cura.util import profile
 class alterationPanel(wx.Panel):
 	def __init__(self, parent, callback):
 		wx.Panel.__init__(self, parent,-1)
-		self.callback = callback
 
+		self.callback = callback
 		self.alterationFileList = ['start.gcode', 'end.gcode']#, 'nextobject.gcode', 'replace.csv'
 		if int(profile.getMachineSetting('extruder_amount')) > 1:
 			self.alterationFileList += ['preSwitchExtruder.gcode', 'postSwitchExtruder.gcode']
 			self.alterationFileList += ['start2.gcode', 'end2.gcode']
-
+		
 		self.currentFile = None
 
 		self.textArea = gcodeTextArea.GcodeTextArea(self)
@@ -23,7 +23,7 @@ class alterationPanel(wx.Panel):
 		self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.list)
 		self.textArea.Bind(wx.EVT_KILL_FOCUS, self.OnFocusLost, self.textArea)
 		self.textArea.Bind(wx.stc.EVT_STC_CHANGE, self.OnFocusLost, self.textArea)
-
+		
 		sizer = wx.GridBagSizer()
 		sizer.Add(self.list, (0,0), span=(5,1), flag=wx.EXPAND)
 		sizer.Add(self.textArea, (5,0), span=(5,1), flag=wx.EXPAND)
@@ -33,7 +33,7 @@ class alterationPanel(wx.Panel):
 		sizer.AddGrowableRow(6)
 		sizer.AddGrowableRow(7)
 		self.SetSizer(sizer)
-
+		
 		self.loadFile(self.alterationFileList[self.list.GetSelection()])
 		self.currentFile = self.list.GetSelection()
 

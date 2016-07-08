@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2013 David Braam - Released under terms of the AG
 import os
 import sys
 import glob
+import ConfigParser as configparser
 
 import gettext
 
@@ -49,8 +50,15 @@ def getDefaultMachineProfiles():
 	path = os.path.normpath(os.path.join(resourceBasePath, 'machine_profiles', '*.ini'))
 	return glob.glob(path)
 
-def getSimpleModeProfiles():
-	path = os.path.normpath(os.path.join(resourceBasePath, 'quickprint', 'profiles', '*.ini'))
+def getSimpleModeProfiles(machine_type):
+	path = os.path.normpath(os.path.join(resourceBasePath, 'quickprint', 'profiles', machine_type, '*.ini'))
+	if os.path.isfile(os.path.join(os.path.dirname(path), 'redirect.ini')):
+		cp = configparser.ConfigParser()
+		cp.read(os.path.join(os.path.dirname(path), 'redirect.ini'))
+		machine_type = cp.get('target', 'machine_type')
+		return getSimpleModeProfiles(machine_type)
+	if not os.path.isdir(os.path.dirname(path)):
+		path = os.path.normpath(os.path.join(resourceBasePath, 'quickprint', 'profiles', '*.ini'))
 	user_path = os.path.normpath(os.path.expanduser(os.path.join('~', '.Cura', 'quickprint', 'profiles')))
 	if os.path.isdir(user_path):
 		files = sorted(glob.glob(os.path.join(user_path, '*.ini')))
@@ -83,5 +91,15 @@ def setupLocalization(selectedLanguage = None):
 
 def getLanguageOptions():
 	return [
-		['en', 'English']
+		['en', 'English'],
+		['de', 'Deutsch'],
+		['fr', 'French'],
+		['tr', 'Turkish'],
+		['ru', 'Russian'],
+		# ['it', 'Italian'],
+		# ['ko', 'Korean'],
+		# ['zh', 'Chinese'],
+		# ['nl', 'Nederlands'],
+		# ['es', 'Spanish'],
+		# ['po', 'Polish'],
 	]

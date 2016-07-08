@@ -40,7 +40,7 @@ class CuraApp(wx.App):
 			portNr = 0xCA00 + sum(map(ord, version.getVersion(False)))
 			if len(files) > 0:
 				try:
-					other_hwnd = windll.user32.FindWindowA(None, ctypes.c_char_p('Cura-BCN3D ' + version.getVersion()))
+					other_hwnd = windll.user32.FindWindowA(None, ctypes.c_char_p('Cura-BCN3D ' + version.getVersion(False)))
 					if other_hwnd != 0:
 						sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 						sock.sendto('\0'.join(files), ("127.0.0.1", portNr))
@@ -135,34 +135,39 @@ class CuraApp(wx.App):
 			self.loadFiles = [exampleFile]
 			if self.splash is not None:
 				self.splash.Show(False)
+				self.splash = None
 			configWizard.ConfigWizard()
 
-		if profile.getPreference('check_for_updates') == 'True':
-			if self.haveInternet() == True:
-				newVersion = version.checkForNewVersion()
-				if newVersion is not None:
-					if self.splash is not None:
-						self.splash.Show(False)
-					if wx.MessageBox(_("A new version of Cura is available, would you like to download?"), _("New version available"), wx.YES_NO | wx.ICON_INFORMATION) == wx.YES:
-						webbrowser.open(newVersion)
-						return
+		#if profile.getPreference('check_for_updates') == 'True':
+		#	if self.haveInternet() == True:
+		#		newVersion = version.checkForNewVersion()
+		#		if newVersion is not None:
+		#			if self.splash is not None:
+		#				self.splash.Show(False)
+		#			if wx.MessageBox(_("A new version of Cura-BCN3D is available, would you like to download?"), _("New version available"), wx.YES_NO | wx.ICON_INFORMATION) == wx.YES:
+		#				webbrowser.open(newVersion)
+		#				return
 		if profile.getMachineSetting('machine_name') == '':
 			return
+
 		self.mainWindow = mainWindow.mainWindow()
 		if self.splash is not None:
 			self.splash.Show(False)
+			self.splash = None
 		self.SetTopWindow(self.mainWindow)
 		self.mainWindow.Show()
 		self.mainWindow.OnDropFiles(self.loadFiles)
+		self.new_version_dialog = None
 		if profile.getPreference('last_run_version') != version.getVersion(False):
 			profile.putPreference('last_run_version', version.getVersion(False))
-			newVersionDialog.newVersionDialog().Show()
+			self.new_version_dialog = newVersionDialog.newVersionDialog().Show()
 
 		setFullScreenCapable(self.mainWindow)
 
 		if sys.platform.startswith('darwin'):
 			wx.CallAfter(self.StupidMacOSWorkaround)
 
+	
 	def haveInternet(self):
 		REMOTE_SERVER = "www.google.com"
 		try:
@@ -173,6 +178,7 @@ class CuraApp(wx.App):
 			pass
 		return False
 
+
 	def StupidMacOSWorkaround(self):
 		"""
 		On MacOS for some magical reason opening new frames does not work until you opened a new modal dialog and closed it.
@@ -182,6 +188,9 @@ class CuraApp(wx.App):
 		wx.PostEvent(dlg, wx.CommandEvent(wx.EVT_CLOSE.typeId))
 		dlg.ShowModal()
 		dlg.Destroy()
+
+		if self.new_version_dialog is not None:
+			self.new_version_dialog.Show()
 
 if platform.system() == "Darwin": #Mac magic. Dragons live here. THis sets full screen options.
 	try:

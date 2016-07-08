@@ -129,13 +129,23 @@ class machineSettingsDialog(wx.Dialog):
 			configBase.SettingRow(right, 'extruder_head_size_height', index=idx)
 
 			for i in xrange(1, extruderCount):
-				configBase.TitleRow(right, _("Extruder %d") % (i+1))
-				configBase.SettingRow(right, 'extruder_offset_x%d' % (i), index=idx)
-				configBase.SettingRow(right, 'extruder_offset_y%d' % (i), index=idx)
+				configBase.TitleRow(left, _("Extruder %d") % (i+1))
+				configBase.SettingRow(left, 'extruder_offset_x%d' % (i), index=idx)
+				configBase.SettingRow(left, 'extruder_offset_y%d' % (i), index=idx)
 
 			configBase.TitleRow(right, _("Communication settings"))
 			configBase.SettingRow(right, 'serial_port', ['AUTO'] + machineCom.serialList(), index=idx)
 			configBase.SettingRow(right, 'serial_baud', ['AUTO'] + map(str, machineCom.baudrateList()), index=idx)
+
+			# configBase.TitleRow(right, _("Firmware settings (time estimate)"))
+			# configBase.SettingRow(right, 'machine_acceleration', index=idx)
+			# configBase.SettingRow(right, 'machine_max_acceleration[0]', index=idx)
+			# configBase.SettingRow(right, 'machine_max_acceleration[1]', index=idx)
+			# configBase.SettingRow(right, 'machine_max_acceleration[2]', index=idx)
+			# configBase.SettingRow(right, 'machine_max_acceleration[3]', index=idx)
+			# configBase.SettingRow(right, 'machine_max_xy_jerk', index=idx)
+			# configBase.SettingRow(right, 'machine_max_z_jerk', index=idx)
+			# configBase.SettingRow(right, 'machine_max_e_jerk', index=idx)
 
 			self.nb.AddPage(main, profile.getMachineSetting('machine_name', idx).title())
 

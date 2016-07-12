@@ -230,7 +230,7 @@ class SceneView(openglGui.glGuiPanel):
     def onLoadDraudiModel(self, button = 1):
         if button == 1:
             if sys.platform.startswith('win'):
-                dir = r"C:\\Program Files (x86)\\Cura-BCN3D-0.1.5\\resources\\draudi_stl"
+                dir = r"C:\\Program Files (x86)\\Cura-BCN3D-0.1.5-beta\\resources\\draudi_stl"
                 os.chdir(dir)
  
                 dlg=wx.FileDialog(self, _("Load Draudi File"), dir, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
@@ -268,7 +268,7 @@ class SceneView(openglGui.glGuiPanel):
         if button == 1:
             #if we are running on windows
             if sys.platform.startswith('win'):
-                dir = r"C:\\Program Files (x86)\\Cura-BCN3D-0.1.5\resources\\configurations"
+                dir = r"C:\\Program Files (x86)\\Cura-BCN3D-0.1.5-beta\resources\\configurations"
                 os.chdir(dir)
                 dlg=wx.FileDialog(self, _("Load BCN3D Configurations"), dir, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
                 dlg.SetWildcard("ini files (*.ini)|*.ini")

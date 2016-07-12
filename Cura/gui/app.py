@@ -138,15 +138,15 @@ class CuraApp(wx.App):
 				self.splash = None
 			configWizard.ConfigWizard()
 
-		#if profile.getPreference('check_for_updates') == 'True':
-		#	if self.haveInternet() == True:
-		#		newVersion = version.checkForNewVersion()
-		#		if newVersion is not None:
-		#			if self.splash is not None:
-		#				self.splash.Show(False)
-		#			if wx.MessageBox(_("A new version of Cura-BCN3D is available, would you like to download?"), _("New version available"), wx.YES_NO | wx.ICON_INFORMATION) == wx.YES:
-		#				webbrowser.open(newVersion)
-		#				return
+		if profile.getPreference('check_for_updates') == 'True':
+			if self.haveInternet() == True:
+				newVersion = version.checkForNewVersion()
+				if newVersion is not None:
+					if self.splash is not None:
+						self.splash.Show(False)
+					if wx.MessageBox(_("A new version of Cura-BCN3D is available, would you like to download?"), _("New version available"), wx.YES_NO | wx.ICON_INFORMATION) == wx.YES:
+						webbrowser.open(newVersion)
+						return
 		if profile.getMachineSetting('machine_name') == '':
 			return
 

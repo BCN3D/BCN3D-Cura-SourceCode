@@ -539,7 +539,7 @@ def getBasePath():
 	:return: The path in which the current configuration files are stored. This depends on the used OS.
 	"""
 	if platform.system() == "Windows":
-		basePath = os.path.normpath(os.path.expanduser('~/.cura/0.1.6'))
+		basePath = os.path.normpath(os.path.expanduser('~/.cura/0.1.5'))
 	elif platform.system() == "Darwin":
 		basePath = os.path.expanduser('~/Library/Application Support/Cura/%s' % version.getVersion(False))
 	else:

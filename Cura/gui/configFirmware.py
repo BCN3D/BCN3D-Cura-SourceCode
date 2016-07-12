@@ -487,8 +487,8 @@ class disconnectPrinter(InfoPage):
 
 
 
-        self.AddText(_('Please turn off your printer and disconnect the USB\n'
-                       'cable from the computer.'))
+        self.AddText(_('Please turn off your printer and disconnect the USB cable from\n'
+                       'the computer.'))
 
     def AllowNext(self):
         return True
@@ -509,9 +509,9 @@ class removeSDCard(InfoPage):
     def __init__(self, parent):
         super(removeSDCard, self).__init__(parent, _('SD Update Wizard'))
 
-        self.AddText(_('Now take out the micro SD card. You just need to\n'
-                       'push it in and the SD card will come off. Be careful\n'
-                       'not to lose the SD card inside the printer.'))
+        self.AddText(_('Now take out the micro SD card. You just need to push it in and\n'
+                       'the SD card will come off. Be careful not to lose the SD card\n'
+                       'inside the printer.'))
 
         self.secondBit = wx.Bitmap(resources.getPathForImage('cover2.png'))
         self.AddBitmap(self.secondBit)
@@ -524,11 +524,10 @@ class addNewFiles(InfoPage):
     def __init__(self, parent):
         super(addNewFiles, self).__init__(parent, _('SD Update Wizard'))
 
-        self.AddText(_('Connect the SD card to your computer and substitute\n'
-                       'the old files for the new ones. We recommned that you\n'
-                       'delete all of the old files and copy the new ones.\n\n'
-                       'Press on the button below to find the new SD files\n'
-                       'you need.\n'))
+        self.AddText(_('Connect the SD card to your computer and substitute the old files\n'
+                       'for the new ones. We recommned that you delete all of the old\n'
+                       'files and copy the new ones.\n\n'
+                       'Press on the button below to find the new SD files you need.\n'))
 
         fileButton = self.AddButton('SD Files')
         fileButton.Bind(wx.EVT_BUTTON, self.onGetFiles)
@@ -547,8 +546,8 @@ class youAreDone(InfoPage):
         super(youAreDone, self).__init__(parent, _('SD Update Wizard'))
 
         self.AddText(_('You are done!\n\n'
-                       'Make sure you insert the SD card back in the LCD\n'
-                       'display and close the LCD Cover.\n\n'
+                       'Make sure you insert the SD card back in the LCD display and close\n'
+                       'the LCD Cover.\n\n'
                        'Enjoy the new version!\n'))
 
     def AllowNext(self):

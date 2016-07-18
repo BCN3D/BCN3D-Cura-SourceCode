@@ -1231,9 +1231,11 @@ def getAlterationFileContents(filename, extruderCount = 1):
 					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
 						t = getProfileSettingFloat('print_temperature%d' % (n+1))
 					prefix += 'M109 T%d %s%f\n' % (n, gcode_parameter_key, t)
+				prefix += 'M190 %s%f\n' % (gcode_parameter_key, bedTemp)
 				prefix += 'T0\n'
 			else:
 				prefix += 'M109 %s%f\n' % (gcode_parameter_key, temp)
+				prefix += 'M190 %s%f\n' % (gcode_parameter_key, bedTemp)
 	elif filename == 'end.gcode':
 		if extruderCount > 1:
 			alterationContents = getAlterationFile("end%d.gcode" % (extruderCount))

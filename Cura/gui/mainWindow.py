@@ -4,6 +4,8 @@ import wx
 import os
 import webbrowser
 import sys
+import mexPanel
+import idexPanel
 import ConfigParser as configparser
 
 from Cura.gui import configBase
@@ -219,7 +221,13 @@ class mainWindow(wx.Frame):
         self.scene = sceneView.SceneView(self.rightPane)
 
         ##Gui components##
-        self.simpleSettingsPanel = simpleMode.simpleModePanel(self.leftPane, self.scene.sceneUpdated)
+        #We want two different simple modes, one for BCN3D users and the default cura one for other machines
+        machine_type = profile.getMachineSetting('machine_type')
+        if machine_type == 'BCN3DSigma':
+            self.simpleSettingsPanel = simpleModePanel(self.leftPane, self.scene.sceneUpdated)
+        else:
+            self.simpleSettingsPanel = simpleMode.simpleModePanel(self.leftPane, self.scene.sceneUpdated)
+
         self.normalSettingsPanel = normalSettingsPanel(self.leftPane, self.scene.sceneUpdated)
 
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
@@ -465,11 +473,15 @@ class mainWindow(wx.Frame):
         self.simpleSettingsPanel.updateProfileToControls()
 
     def reloadSettingPanels(self):
+        machine_type = profile.getMachineSetting('machine_type')
         self.leftSizer.Detach(self.simpleSettingsPanel)
         self.leftSizer.Detach(self.normalSettingsPanel)
         self.simpleSettingsPanel.Destroy()
         self.normalSettingsPanel.Destroy()
-        self.simpleSettingsPanel = simpleMode.simpleModePanel(self.leftPane, lambda : self.scene.sceneUpdated())
+        if machine_type == 'BCN3DSigma':
+            self.simpleSettingsPanel = simpleModePanel(self.leftPane, self.scene.sceneUpdated)
+        else:
+            self.simpleSettingsPanel = simpleMode.simpleModePanel(self.leftPane, self.scene.sceneUpdated)
         self.normalSettingsPanel = normalSettingsPanel(self.leftPane, lambda : self.scene.sceneUpdated())
         self.leftSizer.Add(self.simpleSettingsPanel, 1)
         self.leftSizer.Add(self.normalSettingsPanel, 1, wx.EXPAND)
@@ -807,3 +819,79 @@ class normalSettingsPanel(configBase.configPanelBase):
         if self.alterationPanel is not None:
             self.alterationPanel.updateProfileToControls()
         self.pluginPanel.updateProfileToControls()
+
+
+class simpleModePanel(configBase.configPanelBase):
+    "Main user interface window for Quickprint mode"
+    def __init__(self, parent, callback = None):
+        super(simpleModePanel, self).__init__(parent, callback)
+
+        machine_type = profile.getMachineSetting('machine_type')
+
+        # Main tabs
+        self.nb = wx.Notebook(self)
+        self.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.GetSizer().Add(self.nb, 1, wx.EXPAND)
+
+        #self._callback = callback
+
+        self.pluginPanel = mexPanel.MexPanel(self.nb, callback)
+        self.nb.AddPage(self.pluginPanel, _("MEX"))
+
+        self.alterationPanel = idexPanel.IdexPanel(self.nb, callback)
+        self.nb.AddPage(self.alterationPanel, "IDEX")
+
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+
+        self.nb.SetSize(self.GetSize())
+
+    def OnSize(self, e):
+        # Make the size of the Notebook control the same size as this control
+        self.nb.SetSize(self.GetSize())
+
+        # Propegate the OnSize() event (just in case)
+        e.Skip()
+
+    def UpdateSize(self, configPanel):
+        sizer = configPanel.GetSizer()
+
+        # Pseudocde
+        # if horizontal:
+        #     if width(col1) < best_width(col1) || width(col2) < best_width(col2):
+        #         switch to vertical
+        # else:
+        #     if width(col1) > (best_width(col1) + best_width(col1)):
+        #         switch to horizontal
+        #
+
+        col1 = configPanel.leftPanel
+        colSize1 = col1.GetSize()
+        colBestSize1 = col1.GetBestSize()
+        col2 = configPanel.rightPanel
+        colSize2 = col2.GetSize()
+        colBestSize2 = col2.GetBestSize()
+
+        orientation = sizer.GetOrientation()
+
+        if orientation == wx.HORIZONTAL:
+            if (colSize1[0] <= colBestSize1[0]) or (colSize2[0] <= colBestSize2[0]):
+                configPanel.Freeze()
+                sizer = wx.BoxSizer(wx.VERTICAL)
+                sizer.Add(configPanel.leftPanel, flag=wx.EXPAND)
+                sizer.Add(configPanel.rightPanel, flag=wx.EXPAND)
+                configPanel.SetSizer(sizer)
+                # sizer.Layout()
+                configPanel.Layout()
+                self.Layout()
+                configPanel.Thaw()
+        else:
+            if max(colSize1[0], colSize2[0]) > (colBestSize1[0] + colBestSize2[0]):
+                configPanel.Freeze()
+                sizer = wx.BoxSizer(wx.HORIZONTAL)
+                sizer.Add(configPanel.leftPanel, proportion=1, border=35, flag=wx.EXPAND)
+                sizer.Add(configPanel.rightPanel, proportion=1, flag=wx.EXPAND)
+                configPanel.SetSizer(sizer)
+                # sizer.Layout()
+                configPanel.Layout()
+                self.Layout()
+                configPanel.Thaw()

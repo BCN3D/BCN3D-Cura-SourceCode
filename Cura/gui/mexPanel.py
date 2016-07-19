@@ -110,18 +110,19 @@ class ProfileManager(object):
 					return profile
 		return None
 
-class simpleModePanel(wx.Panel):
+class MexPanel(wx.Panel):
 	"Main user interface window for Quickprint mode"
 	def __init__(self, parent, callback):
-		super(simpleModePanel, self).__init__(parent)
+		super(MexPanel, self).__init__(parent)
 
 		self._callback = callback
 
 		self._profile_manager = ProfileManager()
 
+		self._print_nozzle_options = []
 		self._print_profile_options = []
 		self._print_material_options = []
-		self._print_nozzle_options = []
+
 
 		printNozzlePanel = wx.Panel(self)
 		for nozzle_size in self._profile_manager.getNozzleSizes():

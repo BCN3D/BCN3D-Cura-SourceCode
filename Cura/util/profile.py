@@ -1223,20 +1223,22 @@ def getAlterationFileContents(filename, extruderCount = 1):
 			if extruderCount > 1:
 				for n in xrange(1, extruderCount):
 					t = temp
-					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
-						t = getProfileSettingFloat('print_temperature%d' % (n+1))
+					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n + 1)) > 0:
+						t = getProfileSettingFloat('print_temperature%d' % (n + 1))
 					prefix += 'M104 T%d %s%f\n' % (n, gcode_parameter_key, t)
-				for n in xrange(0, extruderCount):
+				for n in xrange(0, 1):
 					t = temp
-					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n+1)) > 0:
-						t = getProfileSettingFloat('print_temperature%d' % (n+1))
+					if n > 0 and getProfileSettingFloat('print_temperature%d' % (n + 1)) > 0:
+						t = getProfileSettingFloat('print_temperature%d' % (n + 1))
 					prefix += 'M109 T%d %s%f\n' % (n, gcode_parameter_key, t)
+				prefix += 'M190 %s%f\n' % (gcode_parameter_key, bedTemp)
 				prefix += 'T0\n'
 			else:
 				prefix += 'M109 %s%f\n' % (gcode_parameter_key, temp)
-	elif filename == 'end.gcode':
-		if extruderCount > 1:
-			alterationContents = getAlterationFile("end%d.gcode" % (extruderCount))
+				prefix += 'M190 %s%f\n' % (gcode_parameter_key, bedTemp)
+		elif filename == 'end.gcode':
+			if extruderCount > 1:
+				alterationContents = getAlterationFile("end%d.gcode" % (extruderCount))
 		#Append the profile string to the end of the GCode, so we can load it from the GCode file later.
 		#postfix = ';CURA_PROFILE_STRING:%s\n' % (getProfileString())
 	return unicode(prefix + re.sub("(.)\{([^\}]*)\}", replaceTagMatch, alterationContents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'

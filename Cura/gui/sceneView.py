@@ -699,10 +699,7 @@ class SceneView(openglGui.glGuiPanel):
         self.QueueRefresh()
 
     def _onRunEngine(self, e):
-        if self._isSimpleMode:
-            self._engine.runEngine(self._scene, self.GetTopLevelParent().simpleSettingsPanel.getSettingOverrides())
-        else:
-            self._engine.runEngine(self._scene)
+        self._engine.runEngine(self._scene)
 
     def _updateEngineProgress(self, progressValue):
         result = self._engine.getResult()
@@ -1430,34 +1427,34 @@ class SceneView(openglGui.glGuiPanel):
                 texture_name = 'backplate.png'
                 texture_offset = [0.5,120,22]
                 texture_scale = 1.5
-            elif machine_type == 'ultimaker2' or machine_type == 'ultimaker2extended':
+            elif machine_type == 'ultimaker2' or machine_type == 'ultimaker2extended' or machine_type == 'ultimaker2+' or machine_type == 'ultimaker2+extended':
                 filename = resources.getPathForMesh('ultimaker2_platform.stl')
-                offset = [-9,-37,145]
+                offset = [-9, -37, 145]
                 if machine_type.startswith('ultimaker2+'):
                     texture_name = 'Ultimaker2plusbackplate.png'
                 else:
                     texture_name = 'Ultimaker2backplate.png'
-                texture_offset = [9,150,-5]
+                texture_offset = [9, 150, -5]
             elif machine_type == 'ultimaker2go':
                 filename = resources.getPathForMesh('ultimaker2go_platform.stl')
-                offset = [0,-42,145]
-                texture_offset = [0,105,-5]
+                offset = [0, -42, 145]
+                texture_offset = [0, 105, -5]
                 texture_name = 'Ultimaker2backplate.png'
                 texture_scale = 0.9
             elif machine_type == 'ultimaker_plus':
                 filename = resources.getPathForMesh('ultimaker2_platform.stl')
-                offset = [0,-37,145]
-                texture_offset = [0,150,-5]
+                offset = [0, -37, 145]
+                texture_offset = [0, 150, -5]
                 texture_name = 'UltimakerPlusbackplate.png'
             elif machine_type == 'ultimaker':
                 filename = resources.getPathForMesh('ultimaker_platform.stl')
-                offset = [0,0,2.5]
+                offset = [0, 0, 2.5]
             elif machine_type == 'Witbox':
                 filename = resources.getPathForMesh('witbox_platform.stl')
-                offset = [0,-37,145]
+                offset = [0, -37, 145]
             elif machine_type == 'Hephestos':
                 filename = resources.getPathForMesh('hephestos_platform.stl')
-                offset = [0,0,-80]
+                offset = [0, 0, -80]
 
             if filename is not None:
                 meshes = meshLoader.loadMeshes(filename)

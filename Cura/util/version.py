@@ -14,6 +14,7 @@ import subprocess
 import zipfile
 import wx
 import ssl
+import time
 import socket
 
 
@@ -171,7 +172,10 @@ def downloadLatestFHVersion(version,base_url):
  
     if myVar != None:
         print 'Downloading Version... ',version
+        time.sleep(2)
         urllib.urlretrieve(version_url, version + '.zip')
+        time.sleep(5)
+
         print 'Done downloading!'
  
         print 'Inflating files...'

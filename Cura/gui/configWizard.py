@@ -585,6 +585,7 @@ class MachineSelectPage(InfoPage):
             profile.putMachineSetting('machine_center_is_zero', 'False')
             profile.putMachineSetting('gcode_flavor', 'UltiGCode')
             profile.putMachineSetting('extruder_head_size_min_x', '42.0')
+
             profile.putMachineSetting('extruder_head_size_min_y', '12.0')
             profile.putMachineSetting('extruder_head_size_max_x', '62.0')
             profile.putMachineSetting('extruder_head_size_max_y', '32.0')
@@ -597,23 +598,24 @@ class MachineSelectPage(InfoPage):
             profile.putMachineSetting('machine_width', '205')
             profile.putMachineSetting('machine_depth', '205')
             profile.putMachineSetting('machine_height', '200')
-            profile.putMachineSetting('machine_name', 'ultimaker original')
+            profile.putMachineSetting('machine_name', 'Ultimaker Original')
             profile.putMachineSetting('machine_type', 'ultimaker')
             profile.putMachineSetting('machine_center_is_zero', 'False')
+            profile.putMachineSetting('gcode_flavor', 'RepRap (Marlin/Sprinter)')
             profile.putProfileSetting('nozzle_size', '0.4')
             profile.putMachineSetting('extruder_head_size_min_x', '75.0')
             profile.putMachineSetting('extruder_head_size_min_y', '18.0')
             profile.putMachineSetting('extruder_head_size_max_x', '18.0')
             profile.putMachineSetting('extruder_head_size_max_y', '35.0')
             profile.putMachineSetting('extruder_head_size_height', '55.0')
-            profile.putMachineSetting('gcode_flavor', 'RepRap (Marlin/Sprinter)')
         elif self.UltimakerOPRadio.GetValue():
             profile.putMachineSetting('machine_width', '205')
             profile.putMachineSetting('machine_depth', '205')
             profile.putMachineSetting('machine_height', '200')
-            profile.putMachineSetting('machine_name', 'ultimaker original+')
+            profile.putMachineSetting('machine_name', 'Ultimaker Original+')
             profile.putMachineSetting('machine_type', 'ultimaker_plus')
             profile.putMachineSetting('machine_center_is_zero', 'False')
+            profile.putMachineSetting('gcode_flavor', 'RepRap (Marlin/Sprinter)')
             profile.putProfileSetting('nozzle_size', '0.4')
             profile.putMachineSetting('extruder_head_size_min_x', '75.0')
             profile.putMachineSetting('extruder_head_size_min_y', '18.0')
@@ -623,7 +625,6 @@ class MachineSelectPage(InfoPage):
             profile.putMachineSetting('has_heated_bed', 'True')
             profile.putMachineSetting('extruder_amount', '1')
             profile.putProfileSetting('retraction_enable', 'True')
-            profile.putMachineSetting('gcode_flavor', 'RepRap (Marlin/Sprinter)')
         elif self.LulzbotTazRadio.GetValue() or self.LulzbotMiniRadio.GetValue():
             if self.LulzbotTazRadio.GetValue():
                 profile.putMachineSetting('machine_width', '298')
@@ -661,7 +662,6 @@ class MachineSelectPage(InfoPage):
             profile.putPreference('submit_slice_information', 'True')
         else:
             profile.putPreference('submit_slice_information', 'False')
-
 
 class SelectParts(InfoPage):
     def __init__(self, parent):

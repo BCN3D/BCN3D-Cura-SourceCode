@@ -26,13 +26,8 @@ class newVersionDialog(wx.Dialog):
         s.Add(wx.StaticText(p, -1, '(This dialog is only shown once)'))
         s.Add(wx.StaticLine(p), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=10)
         s.Add(wx.StaticText(p, -1, 'New in version 0.1.5 (beta2)'))
-        s.Add(wx.StaticText(p, -1, '* Redesigned and updated the Firmware Updater.'))
-        s.Add(wx.StaticText(p, -1, '* The new Firmware Updater now tells you whether your printers SD files need to be updated and walks you through it if need be.'))
-        s.Add(wx.StaticText(p, -1, '* Fixed a bug that would not let you open Cura if you had no internet connection.'))
-        s.Add(wx.StaticText(p, -1, '* Changed the BCN3D logo in all of the printer platforms.'))
-        s.Add(wx.StaticText(p, -1, '* Other small bugs and fixes.'))
-        s.Add(wx.StaticText(p, -1, '* Deleted the option: Install Default Firmware.'))
-        s.Add(wx.StaticText(p, -1, '* Deleted the faulty simple mode and changed it back to the original one'))
+        s.Add(wx.StaticText(p, -1, '* Fixed several bugs'))
+        s.Add(wx.StaticText(p, -1, '* Fixed sequence that would make Cura-BCN3D crash'))
         self.has_machine = {}
         for n in xrange(0, profile.getMachineCount()):
             self.has_machine[profile.getMachineSetting('machine_type', n)] = n

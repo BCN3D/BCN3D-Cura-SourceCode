@@ -32,6 +32,8 @@ from Cura.gui.util import engineResultView
 from Cura.gui.tools import youmagineGui
 from Cura.gui.tools import imageToMesh
 
+import mainWindow
+
 class SceneView(openglGui.glGuiPanel):
     def __init__(self, parent):
         super(SceneView, self).__init__(parent)
@@ -64,8 +66,10 @@ class SceneView(openglGui.glGuiPanel):
         self.tempMatrix = None
 
         self.openFileButton      = openglGui.glButton(self, 4, _("Load"), (0,0), self.showLoadModel)
+        self.configsButton       = openglGui.glButton(self, 26, _("Profiles"), (1, 0), self.OnLoadConfigurations)
         self.printButton         = openglGui.glButton(self, 6, _("Print"), (2,0), self.OnPrintButton)
         self.printButton.setDisabled(True)
+
 
         group = []
         self.rotateToolButton = openglGui.glRadioButton(self, 8, _("Rotate"), (0,-1), group, self.OnToolSelect)
@@ -104,13 +108,6 @@ class SceneView(openglGui.glGuiPanel):
         self.scaleUniform = openglGui.glCheckbox(self.scaleForm, True, (1,8), None)
 
         self.viewSelection = openglGui.glComboButton(self, _("View mode"), [7,19,11,15,23], [_("Normal"), _("Overhang"), _("Transparent"), _("X-Ray"), _("Layers")], (-1,0), self.OnViewChange)
-
-        self.configsButton = openglGui.glButton(self, 26, _("Profiles"), (1,0), self.OnLoadConfigurations)
-        self.configsButton.setDisabled(False)
-
-        self.youMagineButton = openglGui.glButton(self, 26, _("Share on YouMagine"), (2,0), lambda button: youmagineGui.youmagineManager(self.GetTopLevelParent(), self._scene))
-        self.youMagineButton.setDisabled(True)
-        self.youMagineButton.setHidden(True)
 
         self.notification = openglGui.glNotification(self, (0, 0))
 
@@ -227,78 +224,12 @@ class SceneView(openglGui.glGuiPanel):
         self._scene.arrangeAll()
         self._scene.centerAll()
 
-    def onLoadDraudiModel(self, button = 1):
-        if button == 1:
-            if sys.platform.startswith('win'):
-                dir = r"C:\\Program Files (x86)\\Cura-BCN3D-0.1.5-beta\\resources\\draudi_stl"
-                os.chdir(dir)
- 
-                dlg=wx.FileDialog(self, _("Load Draudi File"), dir, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
- 
-                dlg.SetWildcard("stl files (*.stl)|*.STL")
- 
-                if dlg.ShowModal() != wx.ID_OK:
-                    dlg.Destroy()
-                    return
-                filenames = dlg.GetPaths()
-                dlg.Destroy()
-                if len(filenames) < 1:
-                    return False
-                self.loadFiles(filenames)
-            #If we a running on mac os
-            elif sys.platform.startswith('darwin'):
-                dir = '/Applications/Cura/Cura-BCN3D.app/Contents/Resources/draudi_stl'
-                os.chdir(dir)
- 
-                dlg=wx.FileDialog(self, _("Load Draudi File"), dir, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
- 
-                dlg.SetWildcard("stl files (*.stl)|*.STL")
- 
-                if dlg.ShowModal() != wx.ID_OK:
-                    dlg.Destroy()
-                    return
-                filenames = dlg.GetPaths()
-                dlg.Destroy()
-                if len(filenames) < 1:
-                    return False
-                self.loadFiles(filenames)
- 
- 
+
     def OnLoadConfigurations(self, button = 1):
         if button == 1:
-            #if we are running on windows
-            if sys.platform.startswith('win'):
-                dir = r"C:\\Program Files (x86)\\Cura-BCN3D-0.1.5-beta\resources\\configurations"
-                os.chdir(dir)
-                dlg=wx.FileDialog(self, _("Load BCN3D Configurations"), dir, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
-                dlg.SetWildcard("ini files (*.ini)|*.ini")
- 
-                if dlg.ShowModal() != wx.ID_OK:
-                    dlg.Destroy()
-                    return
-                filenames = dlg.GetPaths()
-                profile.saveProfile(profile.getDefaultProfilePath(), True)
-                dlg.Destroy()
-                if len(filenames) < 1:
-                    return False
-                self.loadFiles(filenames)
-            #If we a running on mac os
-            elif sys.platform.startswith('darwin'):
-                dir = '/Applications/Cura/Cura-BCN3D.app/Contents/Resources/configurations'
-                os.chdir(dir)
- 
-                dlg=wx.FileDialog(self, _("Load BCN3D Configurations"), dir, style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE)
- 
-                dlg.SetWildcard("ini files (*.ini)|*.ini")
- 
-                if dlg.ShowModal() != wx.ID_OK:
-                    dlg.Destroy()
-                    return
-                filenames = dlg.GetPaths()
-                dlg.Destroy()
-                if len(filenames) < 1:
-                    return False
-                self.loadFiles(filenames)
+            mainWindow = self.GetParent().GetParent().GetParent()
+            mainWindow.OnLoadProfile()
+
 
     def showLoadModel(self, button = 1):
         if button == 1:
@@ -800,7 +731,7 @@ class SceneView(openglGui.glGuiPanel):
             self._scene.arrangeAll()
             self.sceneUpdated()
         self._scene.updateSizeOffsets(True)
-        self._machineSize = numpy.array([profile.getMachineSettingFloat('machine_width'), profile.getMachineSettingFloat('machine_depth'), profile.getMachineSettingFloat('machine_height')])
+        self._machineSize = numpy.array([profile.getMachineSettingFloat('machine_width'), profile.getMachineSettingFloat('machine_depth'),profile.getMachineSettingFloat('machine_height')])
         self._objColors[0] = profile.getPreferenceColour('model_colour')
         self._objColors[1] = profile.getPreferenceColour('model_colour2')
         self._objColors[2] = profile.getPreferenceColour('model_colour3')

@@ -19,20 +19,15 @@ class newVersionDialog(wx.Dialog):
         s = wx.BoxSizer(wx.VERTICAL)
         p.SetSizer(s)
 
-        title = wx.StaticText(p, -1, 'Cura-BCN3D-' + version.getVersion() + ' (beta)')
+        title = wx.StaticText(p, -1, 'Cura-BCN3D-' + version.getVersion() + ' (beta2)')
         title.SetFont(wx.Font(18, wx.SWISS, wx.NORMAL, wx.BOLD))
         s.Add(title, flag=wx.ALIGN_CENTRE|wx.EXPAND|wx.BOTTOM, border=5)
         s.Add(wx.StaticText(p, -1, 'Welcome to the new version of Cura-BCN3D.'))
         s.Add(wx.StaticText(p, -1, '(This dialog is only shown once)'))
         s.Add(wx.StaticLine(p), flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=10)
-        s.Add(wx.StaticText(p, -1, 'New in version 0.1.5 (beta)'))
-        s.Add(wx.StaticText(p, -1, '* Redesigned and updated the Firmware Updater.'))
-        s.Add(wx.StaticText(p, -1, '* The new Firmware Updater now tells you whether your printers SD files need to be updated and walks you through it if need be.'))
-        s.Add(wx.StaticText(p, -1, '* Fixed a bug that would not let you open Cura if you had no internet connection.'))
-        s.Add(wx.StaticText(p, -1, '* Changed the BCN3D logo in all of the printer platforms.'))
-        s.Add(wx.StaticText(p, -1, '* Other small bugs and fixes.'))
-        s.Add(wx.StaticText(p, -1, '* Deleted the option: Install Default Firmware.'))
-        s.Add(wx.StaticText(p, -1, '* Deleted the faulty simple mode and changed it back to the original one'))
+        s.Add(wx.StaticText(p, -1, 'New in version 0.1.5 (beta2)'))
+        s.Add(wx.StaticText(p, -1, '* Fixed several bugs'))
+        s.Add(wx.StaticText(p, -1, '* Fixed sequence that would make Cura-BCN3D crash'))
         self.has_machine = {}
         for n in xrange(0, profile.getMachineCount()):
             self.has_machine[profile.getMachineSetting('machine_type', n)] = n

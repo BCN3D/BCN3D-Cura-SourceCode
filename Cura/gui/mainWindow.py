@@ -37,7 +37,7 @@ except:
 
 class mainWindow(wx.Frame):
     def __init__(self):
-        super(mainWindow, self).__init__(None, title='Cura-BCN3D-' + version.getVersion() + '-beta')
+        super(mainWindow, self).__init__(None, title='Cura-BCN3D-' + version.getVersion() + '-beta2')
 
         wx.EVT_CLOSE(self, self.OnClose)
 
@@ -71,12 +71,13 @@ class mainWindow(wx.Frame):
         self.config.SetPath("/ProfileMRU")
         self.profileFileHistory.Load(self.config)
 
+        #Now we create the different menu options, the first one is the options displayed by the 'File' button
         self.menubar = wx.MenuBar()
         self.fileMenu = wx.Menu()
         i = self.fileMenu.Append(-1, _("Load model file...\tCTRL+L"))
         self.Bind(wx.EVT_MENU, lambda e: self.scene.showLoadModel(), i)
         i = self.fileMenu.Append(-1, _("Load Draudi file...\tCTRL+D"))
-        self.Bind(wx.EVT_MENU, lambda e: self.scene.onLoadDraudiModel(), i)
+        self.Bind(wx.EVT_MENU, self.OnLoadDraudiModel, i)
         i = self.fileMenu.Append(-1, _("Save model...\tCTRL+S"))
         self.Bind(wx.EVT_MENU, lambda e: self.scene.showSaveModel(), i)
         i = self.fileMenu.Append(-1, _("Reload platform\tF5"))
@@ -107,12 +108,6 @@ class mainWindow(wx.Frame):
         self.normalModeOnlyItems.append(i)
         self.Bind(wx.EVT_MENU, self.OnLoadProfileFromGcode, i)
 
-        # self.fileMenu.AppendSeparator()
-        ## Disabled the reset profile option, as it resets to global defaults, not machine defaults.
-        # i = self.fileMenu.Append(-1, _("Reset Profile to default"))
-        # self.normalModeOnlyItems.append(i)
-        # self.Bind(wx.EVT_MENU, self.OnResetProfile, i)
-
         self.fileMenu.AppendSeparator()
         i = self.fileMenu.Append(-1, _("Preferences...\tCTRL+,"))
         self.Bind(wx.EVT_MENU, self.OnPreferences, i)
@@ -137,27 +132,14 @@ class mainWindow(wx.Frame):
         self.fileMenu.AppendSeparator()
         i = self.fileMenu.Append(wx.ID_EXIT, _("Quit"))
         self.Bind(wx.EVT_MENU, self.OnQuit, i)
+        #Here we set the name of the menubar, which in this case is 'File'
         self.menubar.Append(self.fileMenu, '&' + _("File"))
 
+
+        #The next menu option is 'Tools'
         toolsMenu = wx.Menu()
-        #i = toolsMenu.Append(-1, 'Batch run...')
-        #self.Bind(wx.EVT_MENU, self.OnBatchRun, i)
-        #self.normalModeOnlyItems.append(i)
-
-        if minecraftImport.hasMinecraft():
-            i = toolsMenu.Append(-1, _("Minecraft map import..."))
-            self.Bind(wx.EVT_MENU, self.OnMinecraftImport, i)
-
-        if version.isDevVersion():
-            i = toolsMenu.Append(-1, _("PID Debugger..."))
-            self.Bind(wx.EVT_MENU, self.OnPIDDebugger, i)
-            i = toolsMenu.Append(-1, _("Auto Firmware Update..."))
-            self.Bind(wx.EVT_MENU, self.OnAutoFirmwareUpdate, i)
-
-        #i = toolsMenu.Append(-1, _("Copy profile to clipboard"))
-        #self.Bind(wx.EVT_MENU, self.onCopyProfileClipboard,i)
-
-        toolsMenu.AppendSeparator()
+        #At BCN3D we do not recommend printing one at a time and we have set a message to come up
+        #in case a user does choose that option.
         self.allAtOnceItem = toolsMenu.Append(-1, _("Print all at once"), kind=wx.ITEM_RADIO)
         self.Bind(wx.EVT_MENU, self.onOneAtATimeSwitch, self.allAtOnceItem)
         self.oneAtATime = toolsMenu.Append(-1, _("Print one at a time"), kind=wx.ITEM_RADIO)
@@ -167,6 +149,7 @@ class mainWindow(wx.Frame):
         else:
             self.allAtOnceItem.Check(True)
 
+        #We name this menu option
         self.menubar.Append(toolsMenu, _("Tools"))
 
         #Machine menu for machine configuration/tooling
@@ -175,6 +158,7 @@ class mainWindow(wx.Frame):
 
         self.menubar.Append(self.machineMenu, _("Machine"))
 
+        #we switch between panels
         expertMenu = wx.Menu()
         i = expertMenu.Append(-1, _("Switch to quickprint..."), kind=wx.ITEM_RADIO)
         self.switchToQuickprintMenuItem = i
@@ -185,6 +169,7 @@ class mainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnNormalSwitch, i)
         expertMenu.AppendSeparator()
 
+        #Open a series of settings that you are not normally able to see
         i = expertMenu.Append(-1, _("Open expert settings...\tCTRL+E"))
         self.normalModeOnlyItems.append(i)
         self.Bind(wx.EVT_MENU, self.OnExpertOpen, i)
@@ -194,6 +179,7 @@ class mainWindow(wx.Frame):
         self.headOffsetWizardMenuItem = expertMenu.Append(-1, _("Run head offset wizard..."))
         self.Bind(wx.EVT_MENU, self.OnHeadOffsetWizard, self.headOffsetWizardMenuItem)
 
+        #give the menu bar a name, in this case 'Expert'
         self.menubar.Append(expertMenu, _("Expert"))
 
         helpMenu = wx.Menu()
@@ -222,14 +208,16 @@ class mainWindow(wx.Frame):
 
         ##Gui components##
         #We want two different simple modes, one for BCN3D users and the default cura one for other machines
+        #Currently working on this, will be available soon
         machine_type = profile.getMachineSetting('machine_type')
         if machine_type == 'BCN3DSigma':
-            self.simpleSettingsPanel = simpleModePanel(self.leftPane, self.scene.sceneUpdated)
+            self.simpleSettingsPanel = simpleModeSigma(self.leftPane, self.scene.sceneUpdated)
         else:
+        #call to the different panels
             self.simpleSettingsPanel = simpleMode.simpleModePanel(self.leftPane, self.scene.sceneUpdated)
-
         self.normalSettingsPanel = normalSettingsPanel(self.leftPane, self.scene.sceneUpdated)
 
+        #Simple panel will be fix while you can change the size for advanced panel
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
         self.leftSizer.Add(self.simpleSettingsPanel, 1)
         self.leftSizer.Add(self.normalSettingsPanel, 1, wx.EXPAND)
@@ -408,6 +396,8 @@ class mainWindow(wx.Frame):
 
     def onOneAtATimeSwitch(self, e):
         profile.putPreference('oneAtATime', self.oneAtATime.IsChecked())
+        if self.oneAtATime.IsChecked() and profile.getMachineSetting('machine_type').startswith('BCN3D'):
+            wx.MessageBox(_('At BCN3D we do not recommend printing with the "One at a time" option. Proceed with care.'), _('One at a time warning'), wx.OK | wx.ICON_WARNING)
         if self.oneAtATime.IsChecked() and profile.getMachineSettingFloat('extruder_head_size_height') < 1:
             wx.MessageBox(_('For "One at a time" printing, you need to have entered the correct head size and gantry height in the machine settings'), _('One at a time warning'), wx.OK | wx.ICON_WARNING)
         self.scene.updateProfileToControls()
@@ -479,7 +469,7 @@ class mainWindow(wx.Frame):
         self.simpleSettingsPanel.Destroy()
         self.normalSettingsPanel.Destroy()
         if machine_type == 'BCN3DSigma':
-            self.simpleSettingsPanel = simpleModePanel(self.leftPane, self.scene.sceneUpdated)
+            self.simpleSettingsPanel = simpleModeSigma(self.leftPane, self.scene.sceneUpdated)
         else:
             self.simpleSettingsPanel = simpleMode.simpleModePanel(self.leftPane, self.scene.sceneUpdated)
         self.normalSettingsPanel = normalSettingsPanel(self.leftPane, lambda : self.scene.sceneUpdated())
@@ -515,6 +505,69 @@ class mainWindow(wx.Frame):
         i = self.machineMenu.Append(-1, _("Install custom firmware..."))
         self.Bind(wx.EVT_MENU, self.OnCustomFirmware, i)
 
+    def OnLoadDraudiModel(self, e):
+
+        if sys.platform.startswith('win'):
+            dir = r"C:\\Program Files (x86)\\Cura-BCN3D-%s-beta2\\resources\\draudi_stl" % version.getVersion()
+
+            dlg = wx.FileDialog(self, _("Load Draudi File"), dir, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE)
+            dlg.SetWildcard("stl files (*.stl)|*.STL")
+
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+            filenames = dlg.GetPaths()
+            dlg.Destroy()
+            if len(filenames) < 1:
+                return False
+            self.scene.loadFiles(filenames)
+
+            # If we a running on mac os
+        elif sys.platform.startswith('darwin'):
+            dir = '/Applications/Cura/Cura-BCN3D.app/Contents/Resources/draudi_stl'
+
+            dlg = wx.FileDialog(self, _("Load Draudi File"), dir, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE)
+            dlg.SetWildcard("stl files (*.stl)|*.STL")
+
+            if dlg.ShowModal() != wx.ID_OK:
+                dlg.Destroy()
+                return
+            filenames = dlg.GetPaths()
+            dlg.Destroy()
+            if len(filenames) < 1:
+                return False
+            self.scene.loadFiles(filenames)
+
+    def OnLoadProfile(self):
+
+        if sys.platform.startswith('win'):
+            dir = r"C:\\Program Files (x86)\\Cura-BCN3D-%s-beta2\\resources\\configurations" % version.getVersion()
+            #os.chdir(dir)
+            dlg = wx.FileDialog(self, _("Select profile file to load"), dir, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+            dlg.SetWildcard("ini files (*.ini)|*.ini")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                profileFile = dlg.GetPath()
+                profile.loadProfile(profileFile)
+                self.updateProfileToAllControls()
+
+                # Update the Profile MRU
+                self.addToProfileMRU(profileFile)
+            dlg.Destroy()
+        if sys.platform.startswith('darwin'):
+            dir = '/Applications/Cura/Cura-BCN3D.app/Contents/Resources/configurations'
+            os.chdir(dir)
+            dlg = wx.FileDialog(self, _("Select profile file to load"), dir, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+            dlg.SetWildcard("ini files (*.ini)|*.ini")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                profileFile = dlg.GetPath()
+                profile.loadProfile(profileFile)
+                self.updateProfileToAllControls()
+
+                # Update the Profile MRU
+                self.addToProfileMRU(profileFile)
+            dlg.Destroy()
 
     def OnLoadProfileFromGcode(self, e):
         dlg=wx.FileDialog(self, _("Select gcode file to load profile from"), os.path.split(profile.getPreference('lastFile'))[0], style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
@@ -569,19 +622,19 @@ class mainWindow(wx.Frame):
 
     def OnNormalSwitch(self, e):
         profile.putPreference('startMode', 'Normal')
-        dlg = wx.MessageDialog(self, _("Copy the settings from quickprint to your full settings?\n(This will overwrite any full setting modifications you have)"), _("Profile copy"), wx.YES_NO | wx.ICON_QUESTION)
-        result = dlg.ShowModal() == wx.ID_YES
-        dlg.Destroy()
-        if result:
-            profile.resetProfile()
-            for k, v in self.simpleSettingsPanel.getSettingOverrides().items():
-                if profile.getMachineSetting('machine_type').startswith('ultimaker2+'):
-                    if k == 'nozzle_size':
-                        v = round(float(v) * 1.14, 2)
-                    if k == 'wall_thickness':
-                        v = round(float(v) * 1.14, 1)
-                profile.putProfileSetting(k, v)
-            self.updateProfileToAllControls()
+       # dlg = wx.MessageDialog(self, _("Copy the settings from quickprint to your full settings?\n(This will overwrite any full setting modifications you have)"), _("Profile copy"), wx.YES_NO | wx.ICON_QUESTION)
+        #result = dlg.ShowModal() == wx.ID_YES
+        #dlg.Destroy()
+        #if result:
+         #   profile.resetProfile()
+          #  for k, v in self.simpleSettingsPanel.getSettingOverrides().items():
+           #     if profile.getMachineSetting('machine_type').startswith('ultimaker2+'):
+            #        if k == 'nozzle_size':
+             #           v = round(float(v) * 1.14, 2)
+              #      if k == 'wall_thickness':
+               #         v = round(float(v) * 1.14, 1)
+               # profile.putProfileSetting(k, v)
+            #self.updateProfileToAllControls()
         self.updateSliceMode()
 
     def OnDefaultMarlinFirmware(self, e):
@@ -821,10 +874,10 @@ class normalSettingsPanel(configBase.configPanelBase):
         self.pluginPanel.updateProfileToControls()
 
 
-class simpleModePanel(configBase.configPanelBase):
+class simpleModeSigma(configBase.configPanelBase):
     "Main user interface window for Quickprint mode"
     def __init__(self, parent, callback = None):
-        super(simpleModePanel, self).__init__(parent, callback)
+        super(simpleModeSigma, self).__init__(parent, callback)
 
         machine_type = profile.getMachineSetting('machine_type')
 
@@ -895,3 +948,4 @@ class simpleModePanel(configBase.configPanelBase):
                 configPanel.Layout()
                 self.Layout()
                 configPanel.Thaw()
+

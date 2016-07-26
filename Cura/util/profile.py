@@ -367,6 +367,8 @@ setting('postSwitchExtruder.gcode', """;Switch between the current extruder and 
 setting('startMode', 'Simple', ['Simple', 'Normal'], 'preference', 'hidden')
 setting('simpleModeProfile', 'Normal', str, 'preference', 'hidden')
 setting('simpleModeMaterial', 'Pla', str, 'preference', 'hidden')
+setting('simpleModeMaterialLeft', 'Pla', str, 'preference', 'hidden')
+setting('simpleModeMaterialRight', 'Pla', str, 'preference', 'hidden')
 setting('simpleModeNozzle', '0.4', float, 'preference', 'hidden')
 setting('simpleModeExtruder', 'T0', str, 'preference', 'hidden')
 setting('simpleModePlatformAdhesion', '1', str, 'preference', 'hidden')

@@ -585,7 +585,6 @@ class MachineSelectPage(InfoPage):
             profile.putMachineSetting('machine_center_is_zero', 'False')
             profile.putMachineSetting('gcode_flavor', 'UltiGCode')
             profile.putMachineSetting('extruder_head_size_min_x', '42.0')
-
             profile.putMachineSetting('extruder_head_size_min_y', '12.0')
             profile.putMachineSetting('extruder_head_size_max_x', '62.0')
             profile.putMachineSetting('extruder_head_size_max_y', '32.0')

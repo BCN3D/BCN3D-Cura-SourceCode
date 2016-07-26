@@ -630,7 +630,13 @@ class SceneView(openglGui.glGuiPanel):
         self.QueueRefresh()
 
     def _onRunEngine(self, e):
-        self._engine.runEngine(self._scene)
+        if self._isSimpleMode:
+            if profile.getMachineSetting('machine_type') == 'BCN3DSigma':
+                self._engine.runEngine(self._scene, self.GetTopLevelParent().simpleSettingsPanel.monoPanel.getSettingOverrides())
+            else:
+                self._engine.runEngine(self._scene, self.GetTopLevelParent().simpleSettingsPanel.getSettingOverrides())
+        else:
+            self._engine.runEngine(self._scene)
 
     def _updateEngineProgress(self, progressValue):
         result = self._engine.getResult()

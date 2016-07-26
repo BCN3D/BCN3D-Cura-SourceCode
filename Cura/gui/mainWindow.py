@@ -886,13 +886,11 @@ class simpleModeSigma(configBase.configPanelBase):
         self.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
         self.GetSizer().Add(self.nb, 1, wx.EXPAND)
 
-        #self._callback = callback
+        self.monoPanel = mexPanel.MexPanel(self.nb, callback)
+        self.nb.AddPage(self.monoPanel, _("MEX"))
 
-        self.pluginPanel = mexPanel.MexPanel(self.nb, callback)
-        self.nb.AddPage(self.pluginPanel, _("MEX"))
-
-        self.alterationPanel = idexPanel.IdexPanel(self.nb, callback)
-        self.nb.AddPage(self.alterationPanel, "IDEX")
+        self.dualPanel = idexPanel.IdexPanel(self.nb, callback)
+        self.nb.AddPage(self.dualPanel, "IDEX")
 
         self.Bind(wx.EVT_SIZE, self.OnSize)
 

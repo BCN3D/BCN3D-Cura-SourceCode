@@ -616,8 +616,6 @@ class Engine(object):
 			settings['enableOozeShield'] = 1
 		if profile.getPreference('startMode') == 'Simple':
 			settings['nozzleSize'] = int(profile.getPreferenceFloat('simpleModeNozzle') * 1000)
-			if profile.getPreference('simpleModeExtruder') == 'T0':
-				settings['startCode'] = profile.getAlterationFileContents('start.gcode', extruderCount)
 		return settings
 
 	def _runEngineProcess(self, cmdList):

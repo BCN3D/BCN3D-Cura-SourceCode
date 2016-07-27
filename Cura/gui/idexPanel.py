@@ -17,14 +17,24 @@ class ProfileInfo(object):
         self.name = self.base_filename
         self.material_left = None
         self.material_right = None
-        self.order = 0
+        self.order_name = 0
+        self.order_materiall = 0
+        self.order_materialr = 0
 
         if cp.has_option('info', 'name'):
             self.name = cp.get('info', 'name')
+        if cp.has_option('info', 'name'):
+            self.order_name = int(cp.get('info', 'order_name'))
+
         if cp.has_option('info', 'material_left'):
             self.material_left = cp.get('info', 'material_left')
+        if cp.has_option('info', 'material_left'):
+            self.order_materiall = cp.get('info', 'order_materiall')
+
         if cp.has_option('info', 'material_right'):
             self.material_right = cp.get('info', 'material_right')
+        if cp.has_option('info', 'material_right'):
+            self.order_materialr = cp.get('info', 'order_materialr')
 
 class ProfileManager(object):
     def __init__(self):
@@ -39,9 +49,9 @@ class ProfileManager(object):
             if pi.material_left is not None and pi.material_right is not None:
                 self._material_in_print_profile = True
 
-        self._print_profiles.sort(cmp=lambda a, b: a.order - b.order)
-        self._material_left_profiles.sort(cmp=lambda a, b: a.order - b.order)
-        self._material_right_profiles.sort(cmp=lambda a, b: a.order - b.order)
+        self._print_profiles.sort(cmp=lambda a, b: a.order_name - b.order_name)
+        self._material_left_profiles.sort(cmp=lambda a, b: a.order_materiall - b.order_materiall)
+        self._material_right_profiles.sort(cmp=lambda a, b: a.order_materialr - b.order_materialr)
 
     def getProfileNames(self):
         ret = []

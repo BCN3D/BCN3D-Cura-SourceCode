@@ -1,3 +1,5 @@
+*Legacy version of the BCN3D Cura. Get our latest version [here](https://github.com/BCN3D/Cura)*
+
 ## Wiki
 
 If you are looking for some information about downloading Cura, installing it and updating the firmware of the machine, please go to the [wiki](https://github.com/BCN3D/BCN3D-Cura-Windows/wiki).
